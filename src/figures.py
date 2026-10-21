@@ -78,10 +78,14 @@ def set_style():
 
 
 def save_figure(fig, out_stem):
-    """Save one figure in every format in FORMATS (out_stem has no extension)."""
+    """Save one figure in every format in FORMATS (out_stem has no extension).
+
+    PDFs are written without a creation date, so re-running gives byte-identical files.
+    """
     for ext in FORMATS:
         path = out_stem.with_suffix(f".{ext}")
-        fig.savefig(path, bbox_inches="tight")
+        metadata = {"CreationDate": None} if ext == "pdf" else None
+        fig.savefig(path, bbox_inches="tight", metadata=metadata)
         logger.info("Saved %s", path)
     plt.close(fig)
 

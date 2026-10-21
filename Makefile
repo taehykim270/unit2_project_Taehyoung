@@ -1,4 +1,5 @@
 # Reproducing Wainwright (2009) - simulation pipeline
+#   make setup     create venv/ and install requirements.txt
 #   make all       run simulation -> summaries -> figures
 #   make simulate  run simulations and save raw results
 #   make analyze   summarize raw results
@@ -8,12 +9,20 @@
 
 # Use the project venv if it exists, otherwise whatever python3 is on PATH
 PYTHON ?= $(if $(wildcard venv/bin/python),venv/bin/python,python3)
+# Interpreter used once to create the venv
+BOOTSTRAP_PYTHON ?= python3
 
 RAW      := results/raw/simulation_raw.csv
 SUMMARY  := results/summary.csv
 FIG1     := results/figures/fig1_success_vs_n_and_theta.png
 
-.PHONY: all simulate analyze figures test clean
+.PHONY: setup all simulate analyze figures test clean
+
+# Create the virtual environment (if missing) and install dependencies
+setup:
+	test -d venv || $(BOOTSTRAP_PYTHON) -m venv venv
+	venv/bin/python -m pip install --upgrade pip
+	venv/bin/python -m pip install -r requirements.txt
 
 # Run complete simulation pipeline and generate all outputs
 all: figures
