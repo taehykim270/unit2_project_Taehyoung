@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual environment
+venv/
+.venv/
+
+# Generated simulation output (rebuilt by `make simulate` / `make analyze`)
+results/raw/*
+results/raw_*/
+data/simulated/*
+!results/raw/.gitkeep
+!data/simulated/.gitkeep
+
+# Local-only documents: licensed copy of the paper (cited in README) and raw working notes
+docs/*.pdf
+docs/Critical_Analysis_Doc.tex
+
+# OS / editor
+.DS_Store
+.vscode/
+.ipynb_checkpoints/

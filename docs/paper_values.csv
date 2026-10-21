@@ -1,0 +1,20 @@
+# Success probabilities read off Wainwright (2009), Fig. 1(b) (identity design, fractional power sparsity).
+# Read programmatically from the figure image embedded in the PDF (page 3): the axis frame and the theta = 1
+# line give the pixel-to-data mapping; each value is the centre of the coloured marker nearest that theta.
+# Approximate: reading error about +/- 0.02 (values clipped to [0, 1]). theta is the paper's x-axis value.
+figure,design,regime,p,theta,success_rate_paper
+1b,identity,fractional,128,0.43,0.02
+1b,identity,fractional,128,0.81,0.47
+1b,identity,fractional,128,1.00,0.64
+1b,identity,fractional,128,1.19,0.75
+1b,identity,fractional,128,1.57,0.97
+1b,identity,fractional,256,0.43,0.02
+1b,identity,fractional,256,0.81,0.30
+1b,identity,fractional,256,1.00,0.62
+1b,identity,fractional,256,1.19,0.81
+1b,identity,fractional,256,1.57,0.95
+1b,identity,fractional,512,0.43,0.00
+1b,identity,fractional,512,0.81,0.36
+1b,identity,fractional,512,1.00,0.68
+1b,identity,fractional,512,1.19,0.84
+1b,identity,fractional,512,1.57,0.98
