@@ -4,6 +4,9 @@ Each figure is saved as PDF (vector, for reports) and PNG (for the README).
 
     fig1_success_vs_n_and_theta   publication figure: Fig. 1(a) and 1(b) of the paper
     fig1_pdw_diagnostics          diagnostic figure: why the Lasso fails below threshold
+    fig2_fig3_success_grid        publication figure: Figs. 2 and 3 of the paper as one grid
+                                  (rows = design, columns = sparsity regime), with the
+                                  theoretical thresholds from results/theory_bounds.csv
 
 Only rows produced by one support-recovery check are plotted (default: CONFIG["check"]).
 
@@ -21,6 +24,7 @@ import matplotlib
 matplotlib.use("Agg")  # write files only, no display needed
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.lines import Line2D
 
 from src.methods import CHECKS
 from src.simulation import CONFIG
@@ -40,6 +44,15 @@ REFERENCE = "#52514e"
 
 # Failure-severity points need enough failing replicates for a stable mean
 MIN_FAIL_REPS = 10
+
+# Panel order and labels for the Figs. 2-3 grid
+DESIGN_ORDER = ["identity", "toeplitz"]
+REGIME_ORDER = ["linear", "sublinear", "fractional"]
+DESIGN_LABELS = {"identity": r"Identity ($\Sigma = I$)",
+                 "toeplitz": rf"Toeplitz ($\mu = {CONFIG['toeplitz_mu']}$)"}
+REGIME_LABELS = {"linear": r"Linear: $k = \lceil \alpha p \rceil$",
+                 "sublinear": r"Sublinear: $k = \lceil \alpha p / \log(\alpha p) \rceil$",
+                 "fractional": r"Fractional power: $k = \lceil \alpha p^{\delta} \rceil$"}
 
 logger = logging.getLogger(__name__)
 
@@ -82,17 +95,17 @@ def select_check(summary, check):
     return selected
 
 
-def plot_curves(ax, curves, x_col, y_col, low_col=None, high_col=None):
+def plot_curves(ax, curves, x_col, y_col, low_col=None, high_col=None, show_k=True):
     """One line per p, with an optional shaded uncertainty band."""
     for p, curve in curves.groupby("p"):
         style = P_STYLE[p]
         curve = curve.sort_values(x_col)
-        k = int(curve["k"].iloc[0])
+        label = f"p = {p} (k = {int(curve['k'].iloc[0])})" if show_k else f"p = {p}"
         if low_col is not None:
             ax.fill_between(curve[x_col], curve[low_col], curve[high_col],
                             color=style["color"], alpha=0.15, linewidth=0)
         ax.plot(curve[x_col], curve[y_col], color=style["color"], marker=style["marker"],
-                markersize=4, linewidth=1.5, label=f"p = {p} (k = {k})")
+                markersize=4, linewidth=1.5, label=label)
 
 
 def fig1_success(summary, out_path):
@@ -181,10 +194,59 @@ def fig1_diagnostics(summary, out_path):
     save_figure(fig, out_path)
 
 
+def fig23_success_grid(summary, bounds, out_path):
+    """Figs. 2-3 as small multiples: success probability vs theta,
+    rows = design (identity, Toeplitz), columns = sparsity regime.
+
+    Vertical lines (averaged over p; they barely depend on p):
+      dashed  eq. (29) thresholds theta_l(Sigma), theta_u(Sigma), mean over random supports
+      dotted  rho_l(Sigma_{S^c|S}), rho_u(Sigma_{S^c|S}) alone, the values the paper's Fig. 3 lines match
+    For the identity design all four equal 1.
+    """
+    designs = [d for d in DESIGN_ORDER if d in set(summary["design"])]
+    regimes = [r for r in REGIME_ORDER if r in set(summary["regime"])]
+    fig, axes = plt.subplots(len(designs), len(regimes), figsize=(12, 3.6 * len(designs)),
+                             sharex=True, sharey=True, squeeze=False)
+
+    for i, design in enumerate(designs):
+        for j, regime in enumerate(regimes):
+            ax = axes[i, j]
+            curves = summary[(summary["design"] == design) & (summary["regime"] == regime)]
+            plot_curves(ax, curves, "theta_actual", "success_rate", "ci_low", "ci_high", show_k=False)
+
+            b = bounds[(bounds["design"] == design) & (bounds["regime"] == regime)]
+            for col, style in [("theta_l_mean", "--"), ("theta_u_mean", "--"),
+                               ("rho_l_mean", ":"), ("rho_u_mean", ":")]:
+                ax.axvline(b[col].mean(), color=REFERENCE, linestyle=style, linewidth=1)
+
+            ax.set_ylim(-0.02, 1.02)
+            ax.set_xlim(left=0)
+            if i == 0:
+                ax.set_title(REGIME_LABELS[regime])
+            if j == 0:
+                ax.set_ylabel(f"{DESIGN_LABELS[design]}\nProb. of exact signed-support recovery")
+            if i == len(designs) - 1:
+                ax.set_xlabel("Rescaled sample size θ = n / [2k log(p − k)]")
+
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    handles += [Line2D([], [], color=REFERENCE, linestyle="--", linewidth=1),
+                Line2D([], [], color=REFERENCE, linestyle=":", linewidth=1)]
+    labels += [r"eq. (29) bounds $\theta_\ell, \theta_u$ (mean over random $S$)",
+               r"$\rho_\ell, \rho_u$ of $\Sigma_{S^c|S}$ alone"]
+    fig.legend(handles, labels, loc="lower center", ncol=len(labels), frameon=False,
+               bbox_to_anchor=(0.5, -0.01))
+    fig.suptitle(rf"Lasso support recovery by design and sparsity regime ($\alpha = {CONFIG['alpha']}$, "
+                 rf"$\delta = {CONFIG['delta']}$; 200 reps per point; bands = 95% Wilson CI)",
+                 fontsize=10, color=INK)
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    save_figure(fig, out_path)
+
+
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     parser = argparse.ArgumentParser(description="Make figures from the summary table.")
     parser.add_argument("--summary", default="results/summary.csv")
+    parser.add_argument("--bounds", default="results/theory_bounds.csv")
     parser.add_argument("--out-dir", default="results/figures")
     parser.add_argument("--check", choices=sorted(CHECKS), default=CONFIG["check"],
                         help="which support-recovery check's results to plot")
@@ -197,6 +259,7 @@ def main():
 
     fig1_success(summary, out_dir / "fig1_success_vs_n_and_theta")
     fig1_diagnostics(summary, out_dir / "fig1_pdw_diagnostics")
+    fig23_success_grid(summary, pd.read_csv(args.bounds), out_dir / "fig2_fig3_success_grid")
 
 
 if __name__ == "__main__":

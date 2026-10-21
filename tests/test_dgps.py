@@ -5,8 +5,9 @@ import math
 import numpy as np
 import pytest
 
-from src.dgps import (generate_beta, generate_gaussian_design, generate_noise, generate_replicate,
-                      rescaled_sample_size, sample_size, sparsity_k)
+from src.dgps import (design_covariance, generate_beta, generate_gaussian_design, generate_noise,
+                      generate_replicate, generate_toeplitz_design, rescaled_sample_size, sample_size,
+                      sparsity_k, toeplitz_cholesky, toeplitz_covariance)
 
 
 @pytest.mark.parametrize("p, expected", [
@@ -52,6 +53,28 @@ def test_gaussian_design_moments():
     gram = X.T @ X / 2000
     off_diag = gram[~np.eye(200, dtype=bool)]
     assert np.max(np.abs(off_diag)) < 0.15
+
+
+def test_toeplitz_design_has_target_covariance():
+    """Rows of the Toeplitz design have covariance Sigma_ij = mu^|i-j|."""
+    mu, p = 0.10, 50
+    Sigma = toeplitz_covariance(p, mu)
+    L = toeplitz_cholesky(p, mu)
+    assert np.allclose(L @ L.T, Sigma)
+    X = generate_toeplitz_design(200_000, p, mu, np.random.default_rng(5))
+    sample_cov = X.T @ X / X.shape[0]
+    assert np.max(np.abs(sample_cov - Sigma)) < 0.02
+    assert abs(np.mean(np.diag(sample_cov, 1)) - mu) < 0.005        # lag-1 correlation ~ mu
+    assert abs(np.mean(np.diag(sample_cov, 2)) - mu**2) < 0.005     # lag-2 correlation ~ mu^2
+
+
+def test_design_covariance_and_replicate_dispatch():
+    assert np.array_equal(design_covariance(5, "identity"), np.eye(5))
+    assert np.allclose(design_covariance(5, "toeplitz", 0.1), toeplitz_covariance(5, 0.1))
+    with pytest.raises(ValueError):
+        generate_replicate(20, 10, 2, 0.5, 0.5, np.random.default_rng(0), design="toeplitz")   # mu missing
+    d = generate_replicate(300, 128, 16, 0.5, 0.5, np.random.default_rng(6), design="toeplitz", toeplitz_mu=0.1)
+    assert np.allclose(d["y"], d["X"] @ d["beta"] + d["w"])
 
 
 def test_noise_sd():

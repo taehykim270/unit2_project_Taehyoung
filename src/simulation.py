@@ -42,8 +42,9 @@ CONFIG = {
     "beta_min": 0.5,                     # |beta*_i| on the support
     "alpha": 0.40,                       # sparsity constant
     "delta": 0.75,                       # exponent for fractional power sparsity
-    "designs": ["identity"],             # add "toeplitz" for Fig. 3
-    "regimes": ["fractional"],           # add "linear", "sublinear" for Fig. 2
+    "designs": ["identity", "toeplitz"], # identity: Figs. 1-2; toeplitz: Fig. 3
+    "toeplitz_mu": 0.10,                 # Sigma_ij = mu^|i-j| for the Toeplitz design (eq. 46)
+    "regimes": ["linear", "sublinear", "fractional"],   # Fig. 1 uses fractional only
     "p_values": [128, 256, 512],
     "thetas": [round(0.1 * i, 1) for i in range(1, 25)],   # 0.1, 0.2, ..., 2.4
     "check": "pdw_restricted_lasso",     # support-recovery check (methods.CHECKS); paper's PDW order
@@ -55,6 +56,7 @@ CONFIG = {
     },
     "crosscheck_reps": 0,                # first m reps per condition also solved by FullLasso
                                          # (0: PDW is exact by Lemmas 2-3; the full-Lasso check lives in tests/)
+    "theory_draws": 50,                  # random supports S averaged for the eq. (29) bounds (src/metrics.py)
     "output_dir": "results/raw",
 }
 
@@ -123,7 +125,8 @@ def run_condition(cond, config):
         rng = replicate_rng(config["master_seed"], cond["design"], cond["regime"],
                             cond["p"], cond["theta"], rep)
         data = generate_replicate(cond["n"], cond["p"], cond["k"], config["sigma"],
-                                  config["beta_min"], rng, design=cond["design"])
+                                  config["beta_min"], rng, design=cond["design"],
+                                  toeplitz_mu=config["toeplitz_mu"])
         result = check.check(data, cond["lam"])
 
         # Cross-check against a full numerical Lasso fit on the first few reps

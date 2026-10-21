@@ -53,7 +53,7 @@ The rows $x_i$ are i.i.d. $N(0, \Sigma)$, and a new $X$ is drawn for every repli
 | Standard (uniform) Gaussian | $\Sigma = I_p$ | Figs. 1, 2 |
 | Toeplitz | $\Sigma_{ij} = \mu^{\lvert i-j\rvert}$, $\mu = 0.10$ | Fig. 3 |
 
-For the Toeplitz case, generate $X = Z\,\Sigma^{1/2}$ (or $Z L^\top$ with $L$ the Cholesky factor of $\Sigma$), where $Z$ is $n\times p$ standard Gaussian.
+For the Toeplitz case, generate $X = Z L^\top$, where $L$ is the Cholesky factor of $\Sigma$ (computed once per $p$) and $Z$ is $n\times p$ standard Gaussian, drawn exactly as in the identity case.
 
 > [Note] Eq. (46) calls the Toeplitz parameter $\mu$, but the Fig. 3 panel titles say "ρ = 0.10". They are the same parameter.
 
@@ -156,6 +156,11 @@ with $\gamma$ the incoherence parameter (26a), $C_{\min}, C_{\max}$ the eigenval
 > Our Fig. 3 draws **both**:
 > - the paper-style lines ($\rho_\ell$, $\rho_u$);
 > - the full eq. (29) bounds, averaged over random draws of $S$ for each panel.
+>
+> How they are computed:
+> - For each (design, regime, $p$), all constants of eqs. (26)–(29) are computed for 50 random supports $S$, drawn uniformly as in the DGP from a stream keyed by (design, regime, $p$).
+> - Their mean and SD are saved in `results/theory_bounds.csv`.
+> - Each panel draws the average over the three values of $p$, which barely differ. For the identity design all four lines equal 1.
 
 ---
 
@@ -237,7 +242,9 @@ The PDW uses the true support $S$. That is legitimate: it certifies what the ful
 All figures are saved in `results/figures/` as PDF (vector) and PNG.
 - **Fig. 1, publication-quality:** `fig1_success_vs_n_and_theta`, 1×2 like the paper. (a) $\hat P$ vs. $n$; (b) $\hat P$ vs. realized $\theta$. Colored and marker-coded by $p$, 95% Wilson CI bands, reference line at $\theta = 1$.
 - **Fig. 1, diagnostic:** `fig1_pdw_diagnostics`. (a) median and 10–90% band of $\max_{j\in S^c}|z_j|$ vs. $\theta$, with the bound $|z| = 1$; (b) pass rate of Step 3 (dual feasibility); (c) pass rate of Step 4 (sign consistency); (d) mean number of wrong variables entering, given Step 3 fails (points with ≥ 10 failing replicates).
-- **Figs. 2–3:** same style, one panel per sparsity regime. Fig. 3 adds both sets of vertical lines (see §3).
+- **Figs. 2–3, publication-quality:** `fig2_fig3_success_grid`, one 2 × 3 grid of small multiples. Rows are the design (identity = Fig. 2, Toeplitz = Fig. 3), columns the sparsity regime (linear, sublinear, fractional power); axes are shared.
+  - Each panel shows $\hat P$ vs. realized $\theta$, coloured and marker-coded by $p$, with 95% Wilson CI bands.
+  - Vertical lines (see §3): the eq. (29) bounds $\theta_\ell, \theta_u$ dashed, and $\rho_\ell, \rho_u$ of $\Sigma_{S^c|S}$ dotted.
 
 
 # Simulation design document

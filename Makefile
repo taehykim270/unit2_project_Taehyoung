@@ -44,6 +44,7 @@ test:
 clean:
 	rm -f results/raw/*.csv results/raw/*.json
 	rm -f results/summary.csv results/thresholds.csv results/collapse.csv results/paper_comparison.csv
+	rm -f results/theory_bounds.csv
 	rm -f results/figures/*.png results/figures/*.pdf
 	rm -rf .pytest_cache
 	find . -name "__pycache__" -type d -not -path "./venv/*" -prune -exec rm -rf {} +

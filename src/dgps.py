@@ -8,6 +8,7 @@ so results are reproducible given the seed set in simulation.py.
 """
 
 import math
+from functools import lru_cache
 
 import numpy as np
 
@@ -60,7 +61,22 @@ def generate_gaussian_design(n, p, rng):
 # Setting 2: Toeplitz family - used for Fig. 3
 # ---------------------------------------------------------------------------
 
-# (to be added for Fig. 3)
+def toeplitz_covariance(p, mu):
+    """Sigma_ij = mu^{|i - j|}   (eq. 46)."""
+    idx = np.arange(p)
+    return mu ** np.abs(idx[:, None] - idx[None, :])
+
+
+@lru_cache(maxsize=None)
+def toeplitz_cholesky(p, mu):
+    """Lower-triangular L with L L^T = Sigma; computed once per (p, mu) and reused."""
+    return np.linalg.cholesky(toeplitz_covariance(p, mu))
+
+
+def generate_toeplitz_design(n, p, mu, rng):
+    """X in R^{n x p} with i.i.d. rows N(0, Sigma), Sigma Toeplitz: X = Z L^T, Z standard Gaussian."""
+    Z = rng.standard_normal((n, p))
+    return Z @ toeplitz_cholesky(p, mu).T
 
 
 # ---------------------------------------------------------------------------
@@ -88,7 +104,18 @@ def generate_noise(n, sigma, rng):
 # One full replicate
 # ---------------------------------------------------------------------------
 
-def generate_replicate(n, p, k, sigma, beta_min, rng, design="identity"):
+def design_covariance(p, design, toeplitz_mu=None):
+    """Population covariance Sigma of the rows of X for a given design."""
+    if design == "identity":
+        return np.eye(p)
+    if design == "toeplitz":
+        if toeplitz_mu is None:
+            raise ValueError("toeplitz design requires toeplitz_mu")
+        return toeplitz_covariance(p, toeplitz_mu)
+    raise ValueError(f"unknown design: {design}")
+
+
+def generate_replicate(n, p, k, sigma, beta_min, rng, design="identity", toeplitz_mu=None):
     """Draw one data set (X, y, beta*, w) for a single simulation replicate.
 
     A new X, support, sign pattern and noise vector are drawn every call,
@@ -97,6 +124,10 @@ def generate_replicate(n, p, k, sigma, beta_min, rng, design="identity"):
     """
     if design == "identity":
         X = generate_gaussian_design(n, p, rng)
+    elif design == "toeplitz":
+        if toeplitz_mu is None:
+            raise ValueError("toeplitz design requires toeplitz_mu")
+        X = generate_toeplitz_design(n, p, toeplitz_mu, rng)
     else:
         raise ValueError(f"unknown design: {design}")
 

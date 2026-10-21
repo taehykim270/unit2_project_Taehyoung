@@ -30,7 +30,8 @@ def test_different_seed_gives_different_results():
 
 
 def test_adding_conditions_does_not_change_existing_results():
-    small = run_simulation(small_config())
+    """Adding designs, regimes, p and theta values (Figs. 2-3) leaves the Fig. 1 rows unchanged."""
+    small = run_simulation(small_config(designs=["identity"], regimes=["fractional"]))
     big = run_simulation(small_config(p_values=[128, 256], thetas=[0.3, 0.5, 1.0, 2.0]))
     merged = small.merge(big, on=["design", "regime", "p", "theta", "rep"], suffixes=("", "_big"))
     assert len(merged) == len(small)
@@ -43,13 +44,15 @@ def test_rows_are_self_describing():
     assert df["seed_key"].is_unique
     assert df["solver_converged"].all()
 
-    row = df.iloc[7]
-    design, regime, p, theta_code, rep = (int(v) for v in row["seed_key"].split("-"))
-    assert (p, theta_code, rep) == (row["p"], round(1000 * row["theta"]), row["rep"])
-    rng = replicate_rng(CONFIG["master_seed"], row["design"], row["regime"], row["p"], row["theta"], row["rep"])
-    data = generate_replicate(row["n"], row["p"], row["k"], CONFIG["sigma"], CONFIG["beta_min"], rng)
-    rerun = make_check(CONFIG).check(data, row["lam"])
-    assert rerun["max_abs_z"] == row["max_abs_z"]
+    for design in CONFIG["designs"]:
+        row = df[df["design"] == design].iloc[7]
+        _, _, p, theta_code, rep = (int(v) for v in row["seed_key"].split("-"))
+        assert (p, theta_code, rep) == (row["p"], round(1000 * row["theta"]), row["rep"])
+        rng = replicate_rng(CONFIG["master_seed"], row["design"], row["regime"], row["p"], row["theta"], row["rep"])
+        data = generate_replicate(row["n"], row["p"], row["k"], CONFIG["sigma"], CONFIG["beta_min"], rng,
+                                  design=row["design"], toeplitz_mu=CONFIG["toeplitz_mu"])
+        rerun = make_check(CONFIG).check(data, row["lam"])
+        assert rerun["max_abs_z"] == row["max_abs_z"]
 
 
 def test_saved_metadata_has_provenance(tmp_path):
@@ -71,13 +74,16 @@ def test_every_check_builds_from_config(name):
 
 def test_build_conditions_is_fully_crossed():
     config = small_config(p_values=[128, 256, 512])
-    assert len(build_conditions(config)) == 3 * 3
+    expected = len(config["designs"]) * len(config["regimes"]) * 3 * len(config["thetas"])
+    assert len(build_conditions(config)) == expected
+    assert len(build_conditions(CONFIG)) == 2 * 3 * 3 * 24      # full study: 432 conditions
 
 
+@pytest.mark.parametrize("design", ["identity", "toeplitz"])
 @pytest.mark.parametrize("theta, low, high", [(0.3, 0.0, 0.0), (2.4, 0.8, 1.0)])
-def test_sanity_conditions(theta, low, high):
+def test_sanity_conditions(design, theta, low, high):
     """Far below threshold success is impossible; far above it is (nearly) certain."""
-    config = small_config(n_reps=50)
+    config = small_config(n_reps=50, designs=[design], regimes=["fractional"])
     cond = next(c for c in build_conditions(dict(config, thetas=[theta])))
     rate = pd.DataFrame(run_condition(cond, config))["success"].mean()
     assert low <= rate <= high

@@ -4,8 +4,43 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.metrics import (compare_with_paper, monte_carlo_se, summarize_collapse, summarize_conditions,
-                         summarize_thresholds, threshold_crossing, two_proportion_z, wilson_interval)
+from src.dgps import toeplitz_covariance
+from src.metrics import (compare_with_paper, monte_carlo_se, rho_lower, rho_upper, summarize_collapse,
+                         summarize_conditions, summarize_theory_bounds, summarize_thresholds,
+                         threshold_constants, threshold_crossing, two_proportion_z, wilson_interval)
+from src.simulation import CONFIG
+
+
+def test_threshold_constants_identity_are_one():
+    """For Sigma = I: gamma = C_min = C_max = 1 and theta_l = theta_u = 1 (Section IV-B)."""
+    c = threshold_constants(np.eye(50), np.arange(0, 50, 5))
+    for key in ["gamma", "c_min", "c_max", "rho_l", "rho_u", "theta_l", "theta_u"]:
+        assert c[key] == pytest.approx(1.0)
+
+
+def test_threshold_constants_toeplitz():
+    """Toeplitz: 0 <= theta_l <= theta_u (eq. 30); isolated supports give gamma = 1 - 2mu/(1+mu^2) at worst."""
+    mu, p = 0.1, 128
+    Sigma = toeplitz_covariance(p, mu)
+    rng = np.random.default_rng(3)
+    for _ in range(5):
+        c = threshold_constants(Sigma, np.sort(rng.choice(p, 30, replace=False)))
+        assert 0 <= c["theta_l"] <= c["theta_u"]
+        assert 1 - 2 * mu / (1 + mu**2) - 1e-9 <= c["gamma"] <= 1
+    assert rho_upper(np.diag([1.0, 2.0])) == 2.0
+    assert rho_lower(np.array([[1.0, 0.5], [0.5, 1.0]])) == pytest.approx(0.5)
+
+
+def test_theory_bounds_reproducible_and_identity_exact():
+    curves = pd.DataFrame([{"design": "identity", "regime": "linear", "p": 128, "k": 52},
+                           {"design": "toeplitz", "regime": "linear", "p": 128, "k": 52}])
+    config = dict(CONFIG, theory_draws=5)
+    a, b = summarize_theory_bounds(curves, config), summarize_theory_bounds(curves, config)
+    pd.testing.assert_frame_equal(a, b)
+    ident = a[a["design"] == "identity"].iloc[0]
+    assert ident["theta_l_mean"] == pytest.approx(1.0) and ident["theta_u_mean"] == pytest.approx(1.0)
+    toep = a[a["design"] == "toeplitz"].iloc[0]
+    assert toep["theta_l_mean"] < 1 < toep["theta_u_mean"]
 
 
 def test_monte_carlo_se():
