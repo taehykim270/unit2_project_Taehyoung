@@ -22,7 +22,7 @@ is above an upper threshold $\theta_u(\Sigma)$, the Lasso recovers the **signed 
 ## 1. Aims
 
 **Fig. 1: Is $\theta$ the right scaling?**
-- (a): Plotted against the raw sample size $n$, the success-probability curves for $p \in \lbrace 128, 256, 512\rbrace $ should be clearly separated: larger problems need more samples.
+- (a): Plotted against the raw sample size $n$, the success-probability curves for $p = 128, 256, 512$ should be clearly separated: larger problems need more samples.
 - (b): Plotted against $\theta = n / (2k\log(p-k))$, the same curves should collapse onto one curve.
 - *Hypothesis:* the three curves are separated in $n$ and overlap within Monte Carlo error in $\theta$.
 
@@ -58,7 +58,7 @@ For the Toeplitz case, generate $X = Z L^\top$, where $L$ is the Cholesky factor
 > [Note] Eq. (46) calls the Toeplitz parameter $\mu$, but the Fig. 3 panel titles say "ρ = 0.10". They are the same parameter.
 
 ### 2.3 True coefficient vector $\beta^{\ast}$
-1. Choose the support $S \subset \lbrace 1,\dots,p\rbrace $ with $|S| = k$ uniformly at random.
+1. Choose the support $S$ of the indices $1, \dots, p$ with $|S| = k$ uniformly at random.
 2. For each $i \in S$, set $\beta^{\ast}_i = +\beta_{\min}$ or $-\beta_{\min}$ with probability 1/2 each.
 3. Set $\beta^{\ast}_j = 0$ for $j \notin S$.
 
@@ -80,7 +80,7 @@ The sample size is set by the control parameter $\theta$:
 $$n = \lceil 2 \theta  k \log(p-k) \rceil .$$
 
 - The paper varies $\theta$ over $(0, 2.4)$.
-- **[Decision]** The paper does not give the grid. Its figures show 13 points (Figs. 1(b), 2; step ≈0.19) and 17 points (Fig. 3; step ≈0.14). This study uses the finer grid $\theta \in \lbrace 0.1, 0.2, \dots, 2.4\rbrace $ (24 values) for all figures, to get higher resolution in the transition region.
+- **[Decision]** The paper does not give the grid. Its figures show 13 points (Figs. 1(b), 2; step ≈0.19) and 17 points (Fig. 3; step ≈0.14). This study uses the finer grid $\theta = 0.1, 0.2, \dots, 2.4$ (24 values) for all figures, to get higher resolution in the transition region.
 - **[Decision]** If $n \le k$, the replicate counts as a failure. Justification:
   - The paper plots the first point of every curve in Figs. 1–3 as 0.
   - $n < k$: $X_S^\top X_S$ is singular, so the PDW is undefined. Also, a unique Lasso solution has at most $n$ nonzeros, so it cannot recover a size-$k$ support.
@@ -132,7 +132,7 @@ The target is the **probability of exact signed-support recovery**:
 
 $$P_{\text{succ}}(\theta, p, \text{regime}, \Sigma) = \mathbb{P}[  \mathbb{S}_\pm(\hat\beta) = \mathbb{S}_\pm(\beta^{\ast})  ],$$
 
-where $\mathbb{S}_\pm(\beta_i) = \mathrm{sign}(\beta_i) \in \lbrace -1, 0, +1\rbrace $ is the extended sign vector (eq. 6).
+where $\mathbb{S}_\pm(\beta_i) = \mathrm{sign}(\beta_i)$, which takes the values $-1$, $0$ or $+1$, is the extended sign vector (eq. 6).
 
 - A replicate succeeds only if the Lasso solution is unique, has exactly the same support as $\beta^{\ast}$, and has the correct sign on every coordinate of that support.
 - The probability is taken over the random $X$, $w$, $S$ and signs.
@@ -168,7 +168,7 @@ with $\gamma$ the incoherence parameter (26a), $C_{\min}, C_{\max}$ the eigenval
 
 **Method under evaluation:** the Lasso (eq. 3)
 
-$$\hat\beta = \arg\min_{\beta\in\mathbb{R}^p} \lbrace  \frac{1}{2n}\Vert y - X\beta\Vert _2^2 + \lambda_n \Vert \beta\Vert _1 \rbrace ,$$
+$$\hat\beta = \arg\min_{\beta\in\mathbb{R}^p} \Big[ \frac{1}{2n}\Vert y - X\beta\Vert_2^2 + \lambda_n \Vert\beta\Vert_1 \Big],$$
 
 with the regularization parameter fixed as in the paper (not tuned by cross-validation):
 
@@ -226,8 +226,8 @@ The PDW uses the true support $S$. That is legitimate: it certifies what the ful
 
 | Measure | Definition | Purpose |
 |---|---|---|
-| **Success probability** | $\hat P = \frac{1}{R}\sum_{r=1}^R \mathbb{1}\lbrace \text{success}_r\rbrace $ | Main quantity in all figures |
-| **Monte Carlo SE** | $\sqrt{\sum_r(\phi_r - \bar\phi)^2 / (R(R-1))}$; for 0/1 outcomes this is $\sqrt{\hat P(1-\hat P)/(R-1)}$ (≤ 0.035 for $R=200$) | Uncertainty of every estimated mean; 0 when $\hat P \in \lbrace 0,1\rbrace $, so the figure bands use Wilson instead |
+| **Success probability** | $\hat P = \frac{1}{R}\sum_{r=1}^R \mathbb{1}(\text{success}_r)$ | Main quantity in all figures |
+| **Monte Carlo SE** | $\sqrt{\sum_r(\phi_r - \bar\phi)^2 / (R(R-1))}$; for 0/1 outcomes this is $\sqrt{\hat P(1-\hat P)/(R-1)}$ (≤ 0.035 for $R=200$) | Uncertainty of every estimated mean; 0 when $\hat P = 0$ or $1$, so the figure bands use Wilson instead |
 | **Solver convergence** | Number of replicates per condition where the numerical solver did not converge | Shows that no result relies on an unconverged fit |
 | **95% interval** | Wilson score interval for $\hat P$ | Better-behaved near 0 and 1 than the Wald interval |
 | **Empirical threshold** $\hat\theta_{50}$ | The realized $\theta$ where $\hat P$ first reaches 0.5 (linear interpolation between grid points; same for $\hat\theta_{10}, \hat\theta_{90}$) | Compare against $\theta^{\ast}=1$ (Fig. 2) and against $[\theta_\ell, \theta_u]$ (Fig. 3) |
