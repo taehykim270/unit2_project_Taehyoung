@@ -80,6 +80,20 @@ def generate_toeplitz_design(n, p, mu, rng):
 
 
 # ---------------------------------------------------------------------------
+# Setting 3 (extension): sparse random design - used for Fig. 5
+# ---------------------------------------------------------------------------
+
+def generate_sparse_design(n, p, q, rng):
+    """X in R^{n x p} with i.i.d. entries +1/sqrt(q), -1/sqrt(q) w.p. q/2 each, and 0 otherwise.
+
+    Entries have mean 0 and variance 1, so Sigma = I as in the identity design, but X is
+    non-Gaussian and mostly zeros (cf. the paper's follow-up on sparse measurement matrices, ref. [36]).
+    """
+    u = rng.random((n, p))
+    return (np.where(u < q / 2, 1.0, 0.0) - np.where((u >= q / 2) & (u < q), 1.0, 0.0)) / np.sqrt(q)
+
+
+# ---------------------------------------------------------------------------
 # True coefficient vector and noise
 # ---------------------------------------------------------------------------
 
@@ -106,7 +120,7 @@ def _generate_noise(n, sigma, rng):
 
 def design_covariance(p, design, toeplitz_mu=None):
     """Population covariance Sigma of the rows of X for a given design."""
-    if design == "identity":
+    if design in ("identity", "sparse"):    # the sparse design also has Sigma = I
         return np.eye(p)
     if design.startswith("toeplitz"):
         if toeplitz_mu is None:
@@ -115,7 +129,7 @@ def design_covariance(p, design, toeplitz_mu=None):
     raise ValueError(f"unknown design: {design}")
 
 
-def generate_replicate(n, p, k, sigma, beta_min, rng, design="identity", toeplitz_mu=None):
+def generate_replicate(n, p, k, sigma, beta_min, rng, design="identity", toeplitz_mu=None, sparse_q=None):
     """Draw one data set (X, y, beta*, w) for a single simulation replicate.
 
     A new X, support, sign pattern and noise vector are drawn every call,
@@ -128,6 +142,10 @@ def generate_replicate(n, p, k, sigma, beta_min, rng, design="identity", toeplit
         if toeplitz_mu is None:
             raise ValueError("toeplitz design requires toeplitz_mu")
         X = generate_toeplitz_design(n, p, toeplitz_mu, rng)
+    elif design == "sparse":
+        if sparse_q is None:
+            raise ValueError("sparse design requires sparse_q")
+        X = generate_sparse_design(n, p, sparse_q, rng)
     else:
         raise ValueError(f"unknown design: {design}")
 

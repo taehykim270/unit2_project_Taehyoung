@@ -36,13 +36,13 @@ def test_rows_are_self_describing():
         assert (p, theta_code, rep) == (row["p"], round(1000 * row["theta"]), row["rep"])
         rng = replicate_rng(CONFIG["master_seed"], row["design"], row["regime"], row["p"], row["theta"], row["rep"])
         data = generate_replicate(row["n"], row["p"], row["k"], CONFIG["sigma"], CONFIG["beta_min"], rng,
-                                  design=row["design"], toeplitz_mu=CONFIG["toeplitz_mu"].get(row["design"]))
+                                  design=row["design"], toeplitz_mu=CONFIG["toeplitz_mu"].get(row["design"]), sparse_q=CONFIG["sparse_q"])
         rerun = make_check(CONFIG).check(data, row["lam"])
         assert rerun["max_abs_z"] == row["max_abs_z"]
 
 
 @pytest.mark.parametrize("design, theta, low, high", [
-    ("identity", 0.3, 0.0, 0.0), ("toeplitz", 0.3, 0.0, 0.0), ("toeplitz_strong", 0.3, 0.0, 0.0),
+    ("identity", 0.3, 0.0, 0.0), ("toeplitz", 0.3, 0.0, 0.0), ("toeplitz_strong", 0.3, 0.0, 0.0), ("sparse", 0.3, 0.0, 0.0),
     ("identity", 2.4, 0.8, 1.0), ("toeplitz", 2.4, 0.8, 1.0),
     # no "far above" case for toeplitz_strong: with mu = 0.5 the threshold lies beyond theta = 2.4
 ])

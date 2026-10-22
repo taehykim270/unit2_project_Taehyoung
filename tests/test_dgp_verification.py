@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from src.dgps import (generate_beta, generate_gaussian_design, generate_toeplitz_design, sparsity_k,
+from src.dgps import (generate_beta, generate_gaussian_design, generate_sparse_design, generate_toeplitz_design, sparsity_k,
                       toeplitz_cholesky, toeplitz_covariance)
 
 
@@ -49,3 +49,13 @@ def test_toeplitz_design_has_target_covariance():
     assert np.max(np.abs(sample_cov - Sigma)) < 0.02
     assert abs(np.mean(np.diag(sample_cov, 1)) - mu) < 0.005        # lag-1 correlation ~ mu
     assert abs(np.mean(np.diag(sample_cov, 2)) - mu**2) < 0.005     # lag-2 correlation ~ mu^2
+
+
+def test_sparse_design_moments():
+    """Sparse random design: entries 0 w.p. 1 - q, otherwise +/- 1/sqrt(q); mean 0, variance 1."""
+    q = 0.1
+    X = generate_sparse_design(2000, 200, q, np.random.default_rng(7))
+    assert abs(np.mean(X == 0) - (1 - q)) < 0.005
+    assert set(np.unique(np.round(X * np.sqrt(q), 12))) == {-1.0, 0.0, 1.0}
+    assert abs(X.mean()) < 0.01
+    assert abs(X.var() - 1.0) < 0.02

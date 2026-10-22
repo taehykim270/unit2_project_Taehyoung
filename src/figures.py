@@ -8,6 +8,7 @@ Each figure is saved as PDF (vector, for reports) and PNG (for the README).
     fig3_toeplitz_by_regime       publication figure: Fig. 3 of the paper (Toeplitz design), with the
                                   theoretical thresholds from results/theory_bounds.csv
     fig4_toeplitz_strong_by_regime  extension (not in the paper): Toeplitz design with mu = 0.5
+    fig5_sparse_by_regime           extension (not in the paper): sparse random design, q = 0.1
 
 Only rows produced by one support-recovery check are plotted (default: CONFIG["check"]).
 
@@ -50,7 +51,8 @@ MIN_FAIL_REPS = 10
 REGIME_ORDER = ["linear", "sublinear", "fractional"]
 DESIGN_LABELS = {"identity": r"Identity ($\Sigma = I$)",
                  "toeplitz": rf"Toeplitz ($\mu = {CONFIG['toeplitz_mu']['toeplitz']}$)",
-                 "toeplitz_strong": rf"Toeplitz ($\mu = {CONFIG['toeplitz_mu']['toeplitz_strong']}$, extension)"}
+                 "toeplitz_strong": rf"Toeplitz ($\mu = {CONFIG['toeplitz_mu']['toeplitz_strong']}$, extension)",
+                 "sparse": rf"sparse random ($q = {CONFIG['sparse_q']}$, extension)"}
 REGIME_LABELS = {"linear": r"Linear: $k = \lceil \alpha p \rceil$",
                  "sublinear": r"Sublinear: $k = \lceil \alpha p / \log(\alpha p) \rceil$",
                  "fractional": r"Fractional power: $k = \lceil \alpha p^{\delta} \rceil$"}
@@ -213,7 +215,7 @@ def fig_success_by_regime(summary, bounds, design, out_path):
         _plot_curves(ax, curves, "theta_actual", "success_rate", "ci_low", "ci_high", show_k=False,
                      markersize=2.8)
         b = bounds[(bounds["design"] == design) & (bounds["regime"] == regime)]
-        if design == "identity":
+        if design in ("identity", "sparse"):   # Sigma = I: theta* = 1
             ax.axvline(1.0, color=REFERENCE, linestyle="--", linewidth=1)
         else:
             # each line is labelled just above the plot area, where no data is drawn;
@@ -239,7 +241,7 @@ def fig_success_by_regime(summary, bounds, design, out_path):
     axes[0].set_ylabel("Prob. of exact signed-support recovery")
 
     handles, labels = axes[0].get_legend_handles_labels()
-    if design == "identity":
+    if design in ("identity", "sparse"):   # Sigma = I: theta* = 1
         handles.append(Line2D([], [], color=REFERENCE, linestyle="--", linewidth=1))
         labels.append(r"theory: $\theta^* = 1$")
     else:
@@ -279,6 +281,8 @@ def main():
     fig_success_by_regime(summary, bounds, "toeplitz", out_dir / "fig3_toeplitz_by_regime")
     if "toeplitz_strong" in set(summary["design"]):
         fig_success_by_regime(summary, bounds, "toeplitz_strong", out_dir / "fig4_toeplitz_strong_by_regime")
+    if "sparse" in set(summary["design"]):
+        fig_success_by_regime(summary, bounds, "sparse", out_dir / "fig5_sparse_by_regime")
 
 
 if __name__ == "__main__":

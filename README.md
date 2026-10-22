@@ -4,21 +4,23 @@ This project reproduces the simulation study (Figs. 1–3) of
 M. J. Wainwright (2009), *Sharp Thresholds for High-Dimensional and Noisy Sparsity
 Recovery Using ℓ1-Constrained Quadratic Programming (Lasso)*, IEEE Trans. Inf. Theory 55(5),
 2183–2202, [doi:10.1109/TIT.2009.2016018](https://doi.org/10.1109/TIT.2009.2016018).
-The paper shows that the Lasso recovers the exact signed support of a sparse vector
-with probability → 1 when the rescaled sample size θ = n / (2k log(p − k)) exceeds a
-threshold (θ* = 1 for i.i.d. Gaussian designs), and fails with probability → 1 below it.
+The paper studies whether the Lasso can select exactly the nonzero variables and recover
+their signs (**signed-support recovery**). As the problem size grows, success probability
+approaches 1 above a threshold in θ = n / (2k log(p − k)) and 0 below it. Here, n is the
+sample size, p is the number of variables, and k is the number of nonzero coefficients.
+For independent Gaussian predictors (the identity design), the threshold is θ* = 1.
 
-The full simulation design (aims, data-generating mechanisms, estimand, methods and
-performance measures) is in [ADEMP.md](ADEMP.md). The paper itself is not included in
-this repository (licensed copy); see the DOI above.
+The full simulation plan is in [ADEMP.md](ADEMP.md): the aims, how data are generated,
+the target probability, the methods, and how performance is measured. The paper itself
+is not included in this repository; see the DOI above.
 
 ## Key findings
 
-The qualitative behaviour is reproduced: rescaling by θ = n/(2k log(p − k)) lines the curves
-up across p, the identity-design transition sits near θ = 1, and the Toeplitz transition lies
-between the eq. (29) bounds. However, our success rates are noticeably lower than the paper's
-in the transition region, and the paper's figures are not fully consistent with its stated
-rescaling formula.
+The main patterns are reproduced. Plotting success against θ brings the curves for different
+p close together. Success rises near θ = 1 for the identity design and between the bounds
+in eq. (29) for the correlated Toeplitz design. Our success rates are lower than the paper's
+where success rises from low to high (the transition region). The captions of the paper's
+Figs. 2 and 3 also give a different rescaling formula from its main text.
 
 ## Reproducing everything
 
@@ -28,56 +30,59 @@ Requires Python 3.10 or newer (tested with 3.14) and `make`. From the project ro
 make reproduce
 ```
 
-This single command creates a virtual environment in `venv/` and installs `requirements.txt`
-into it, removes all generated files, runs the test suite, and reruns the full pipeline
-(simulation, summary tables, figures). It takes about 7 minutes. All `make` targets use
+This command creates a virtual environment in `venv/`, installs the packages listed in
+`requirements.txt`, removes generated files, runs the tests, and rebuilds the simulations,
+summary tables and figures. It takes about 9 minutes. All `make` targets use
 `venv/bin/python` automatically, so there is no need to activate the environment.
 
 ## Running individual steps
 
 | Target | What it does |
 |---|---|
-| `make reproduce` | `setup`, `clean`, `test`, then `all`: a full from-scratch reproduction |
+| `make reproduce` | run `setup`, `clean`, `test`, then `all` to rebuild everything |
 | `make setup` | create `venv/` and install the dependencies |
-| `make simulate` | run all 648 conditions × 200 replicates and save the raw results to `results/raw/` |
-| `make analyze` | compute success rates, CIs, thresholds, curve collapse, the comparison with the paper and the theoretical bounds |
+| `make simulate` | run all 864 conditions × 200 replicates and save the raw results to `results/raw/` |
+| `make analyze` | compute success rates, confidence intervals, thresholds, overlap of curves across p, comparisons with the paper, and theoretical bounds |
 | `make figures` | draw all figures (PDF and PNG) into `results/figures/` |
 | `make all` | `simulate`, then `analyze`, then `figures` (each step only reruns when its inputs changed) |
 | `make test` | run the test suite |
 | `make clean` | remove all generated files, so that `make all` rebuilds everything from scratch |
 
 **Estimated runtime** (laptop, single core):
+
 - `make setup`: about 1 minute (downloads packages)
 - `make test`: about 5 seconds
-- `make reproduce`: about 7 minutes in total
-- `make all` from scratch: about 6 minutes. The simulation step dominates (342 s for 129,600 replicates); summaries and figures take a few seconds.
+- `make reproduce`: about 9 minutes in total
+- `make all` from scratch: about 8 minutes. Most of this is simulation time (451 s for 172,800 replicates); summaries and figures take a few seconds.
 
 The simulation can also be run directly, for example
 `venv/bin/python -m src.simulation --n-reps 10` for a quick test run, or
-`--check pdw_closed_form` to use the closed-form primal-dual witness instead of the default.
+`--check pdw_closed_form` to check recovery using the closed-form primal-dual witness
+(PDW), which uses a linear solve. See [ADEMP.md](ADEMP.md) for the method details.
 
 ## Outputs
 
 | File | Contents |
 |---|---|
 | `results/raw/simulation_raw.csv` | one row per replicate (not committed; rebuilt by `make simulate`) |
-| `results/raw/simulation_config.json` | exact configuration, seed rule, package versions and git commit of the run |
-| `results/summary.csv` | one row per condition: success rate, Monte Carlo SE, 95% Wilson CI, diagnostics |
+| `results/raw/simulation_config.json` | settings, random-seed rule, package versions and git commit used for the run |
+| `results/summary.csv` | one row per condition: success rate, Monte Carlo standard error (SE), 95% Wilson confidence interval (CI), and failure diagnostics |
 | `results/thresholds.csv` | per curve: θ where the success rate first reaches 0.1, 0.5 and 0.9 |
-| `results/collapse.csv` | per θ: largest gap between the curves for different p (two-proportion z) |
-| `results/paper_comparison.csv` | our success rates next to approximate values read off the paper's Figs. 1(b), 2 and 3 |
+| `results/collapse.csv` | per θ: largest standardized difference between curves for different p (two-proportion z statistic) |
+| `results/paper_comparison.csv` | our success rates alongside approximate values read from the paper's Figs. 1(b), 2 and 3 |
 | `results/theory_bounds.csv` | eq. (29) thresholds θ_ℓ, θ_u and ρ_ℓ, ρ_u, averaged over random supports |
 | `results/figures/fig1_success_vs_n_and_theta` | Fig. 1: success probability vs. n and vs. θ |
-| `results/figures/fig1_pdw_diagnostics` | diagnostic figure: which step of the primal-dual witness fails, and how badly |
+| `results/figures/fig1_pdw_diagnostics` | diagnostic figure: which PDW check fails and how many wrong variables are selected |
 | `results/figures/fig2_identity_by_regime` | Fig. 2: identity design, success probability by sparsity regime |
 | `results/figures/fig3_toeplitz_by_regime` | Fig. 3: Toeplitz design, with the theoretical thresholds |
 | `results/figures/fig4_toeplitz_strong_by_regime` | extension (not in the paper): Toeplitz design with μ = 0.5 |
+| `results/figures/fig5_sparse_by_regime` | extension (not in the paper): sparse random design, q = 0.1 |
 
 ## Repository structure
 
 ```
 ├── src/
-│   ├── dgps.py          # data-generating functions (identity and Toeplitz designs, beta*, noise)
+│   ├── dgps.py          # generate design matrices, beta* and noise
 │   ├── methods.py       # support-recovery checks: primal-dual witness (two versions), full Lasso
 │   ├── metrics.py       # performance measures and theoretical thresholds
 │   ├── simulation.py    # configuration (CONFIG), seeding and the simulation loop

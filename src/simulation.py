@@ -46,9 +46,10 @@ CONFIG = {
     "beta_min": 0.5,                     # |beta*_i| on the support
     "alpha": 0.40,                       # sparsity constant
     "delta": 0.75,                       # exponent for fractional power sparsity
-    "designs": ["identity", "toeplitz", "toeplitz_strong"],   # Figs. 1-2; Fig. 3; extension (Fig. 4)
+    "designs": ["identity", "toeplitz", "toeplitz_strong", "sparse"],   # Figs. 1-2; 3; extensions (Figs. 4, 5)
     "toeplitz_mu": {"toeplitz": 0.10,    # Sigma_ij = mu^|i-j| (eq. 46); mu = 0.10 as in the paper's Fig. 3
                     "toeplitz_strong": 0.50},   # extension: stronger correlation, less favourable to the Lasso
+    "sparse_q": 0.10,                    # extension: sparse random design, fraction of nonzero entries
     "regimes": ["linear", "sublinear", "fractional"],   # Fig. 1 uses fractional only
     "p_values": [128, 256, 512],
     "thetas": [round(0.1 * i, 1) for i in range(1, 25)],   # 0.1, 0.2, ..., 2.4
@@ -66,7 +67,7 @@ CONFIG = {
 }
 
 # Integer codes used to build per-condition seeds (keep fixed once results exist)
-DESIGN_CODES = {"identity": 0, "toeplitz": 1, "toeplitz_strong": 2}
+DESIGN_CODES = {"identity": 0, "toeplitz": 1, "toeplitz_strong": 2, "sparse": 3}
 REGIME_CODES = {"linear": 0, "sublinear": 1, "fractional": 2}
 
 logger = logging.getLogger(__name__)
@@ -131,7 +132,8 @@ def run_condition(cond, config):
                             cond["p"], cond["theta"], rep)
         data = generate_replicate(cond["n"], cond["p"], cond["k"], config["sigma"],
                                   config["beta_min"], rng, design=cond["design"],
-                                  toeplitz_mu=config["toeplitz_mu"].get(cond["design"]))
+                                  toeplitz_mu=config["toeplitz_mu"].get(cond["design"]),
+                                  sparse_q=config["sparse_q"])
         result = check.check(data, cond["lam"])
 
         # Cross-check against a full numerical Lasso fit on the first few reps

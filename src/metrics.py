@@ -272,7 +272,7 @@ def main():
     parser.add_argument("--out-dir", default="results")
     args = parser.parse_args()
 
-    raw = pd.read_csv(args.raw)
+    raw = pd.read_csv(args.raw, low_memory=False)   # mixed bool/NaN columns: read in one pass
     summary = summarize_conditions(raw)
     thresholds = summarize_thresholds(summary)
     collapse = summarize_collapse(summary)
