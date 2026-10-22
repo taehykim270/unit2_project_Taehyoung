@@ -17,3 +17,12 @@ pdw_restricted_lasso,toeplitz,linear,512,205,0.825989060184658,1.094694658170998
 pdw_restricted_lasso,toeplitz,sublinear,128,14,0.8329967880833784,1.2905381741407285,2.159873989275593,1.3268772011922148
 pdw_restricted_lasso,toeplitz,sublinear,256,23,0.8074671577440504,1.1505585924333803,1.9521609393280404,1.14469378158399
 pdw_restricted_lasso,toeplitz,sublinear,512,39,0.8442203556952609,1.0976987197718158,1.5896162785352703,0.7453959228400094
+pdw_restricted_lasso,toeplitz_strong,fractional,128,16,1.2837908738994896,,,
+pdw_restricted_lasso,toeplitz_strong,fractional,256,26,1.4345657001509966,,,
+pdw_restricted_lasso,toeplitz_strong,fractional,512,44,1.48078269519427,,,
+pdw_restricted_lasso,toeplitz_strong,linear,128,52,,,,
+pdw_restricted_lasso,toeplitz_strong,linear,256,103,,,,
+pdw_restricted_lasso,toeplitz_strong,linear,512,205,,,,
+pdw_restricted_lasso,toeplitz_strong,sublinear,128,14,1.2688953651799528,,,
+pdw_restricted_lasso,toeplitz_strong,sublinear,256,23,1.3231534592744363,,,
+pdw_restricted_lasso,toeplitz_strong,sublinear,512,39,1.4508457609852685,,,

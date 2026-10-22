@@ -7,6 +7,7 @@ Each figure is saved as PDF (vector, for reports) and PNG (for the README).
     fig2_identity_by_regime       publication figure: Fig. 2 of the paper (identity design, one panel per regime)
     fig3_toeplitz_by_regime       publication figure: Fig. 3 of the paper (Toeplitz design), with the
                                   theoretical thresholds from results/theory_bounds.csv
+    fig4_toeplitz_strong_by_regime  extension (not in the paper): Toeplitz design with mu = 0.5
 
 Only rows produced by one support-recovery check are plotted (default: CONFIG["check"]).
 
@@ -48,7 +49,8 @@ MIN_FAIL_REPS = 10
 # Panel order and labels for Figs. 2-3
 REGIME_ORDER = ["linear", "sublinear", "fractional"]
 DESIGN_LABELS = {"identity": r"Identity ($\Sigma = I$)",
-                 "toeplitz": rf"Toeplitz ($\mu = {CONFIG['toeplitz_mu']}$)"}
+                 "toeplitz": rf"Toeplitz ($\mu = {CONFIG['toeplitz_mu']['toeplitz']}$)",
+                 "toeplitz_strong": rf"Toeplitz ($\mu = {CONFIG['toeplitz_mu']['toeplitz_strong']}$, extension)"}
 REGIME_LABELS = {"linear": r"Linear: $k = \lceil \alpha p \rceil$",
                  "sublinear": r"Sublinear: $k = \lceil \alpha p / \log(\alpha p) \rceil$",
                  "fractional": r"Fractional power: $k = \lceil \alpha p^{\delta} \rceil$"}
@@ -214,15 +216,22 @@ def fig_success_by_regime(summary, bounds, design, out_path):
         if design == "identity":
             ax.axvline(1.0, color=REFERENCE, linestyle="--", linewidth=1)
         else:
-            # each line is labelled just above the plot area, where no data is drawn
+            # each line is labelled just above the plot area, where no data is drawn;
+            # lines beyond the simulated theta range are noted at the right edge instead
+            x_max = summary["theta_actual"].max() + 0.1
             for col, style, label, ha in [("theta_l_mean", "--", r"$\theta_\ell$", "center"),
                                           ("theta_u_mean", "--", r"$\theta_u$", "center"),
                                           ("rho_l_mean", ":", r"$\rho_\ell$", "right"),
                                           ("rho_u_mean", ":", r"$\rho_u$", "left")]:
                 x = b[col].mean()
+                if x > x_max:
+                    ax.text(0.98, 0.78, f"{label} ≈ {x:.0f} →\n(off scale)", transform=ax.transAxes,
+                            color=REFERENCE, fontsize=9, ha="right", va="center")
+                    continue
                 ax.axvline(x, color=REFERENCE, linestyle=style, linewidth=1)
                 ax.text(x, 1.01, label, transform=ax.get_xaxis_transform(), color=REFERENCE,
                         fontsize=9, ha=ha, va="bottom")
+            ax.set_xlim(0, x_max)
         ax.set_ylim(-0.02, 1.02)
         ax.set_xlim(left=0)
         ax.set_title(REGIME_LABELS[regime], pad=16)
@@ -236,8 +245,9 @@ def fig_success_by_regime(summary, bounds, design, out_path):
     else:
         handles += [Line2D([], [], color=REFERENCE, linestyle="--", linewidth=1),
                     Line2D([], [], color=REFERENCE, linestyle=":", linewidth=1)]
+        rho_note = ", matching the paper's lines" if design == "toeplitz" else ""
         labels += [r"$\theta_\ell, \theta_u$: theoretical bounds, eq. (29)",
-                   r"$\rho_\ell, \rho_u$: numerators of eq. (29), matching the paper's lines"]
+                   r"$\rho_\ell, \rho_u$: numerators of eq. (29)" + rho_note]
     fig.legend(handles, labels, loc="lower center", ncol=len(labels), frameon=False,
                bbox_to_anchor=(0.5, -0.02))
     fig.suptitle(rf"Lasso support recovery, {DESIGN_LABELS[design]} design ($\alpha = {CONFIG['alpha']}$, "
@@ -267,6 +277,8 @@ def main():
     bounds = pd.read_csv(args.bounds)
     fig_success_by_regime(summary, bounds, "identity", out_dir / "fig2_identity_by_regime")
     fig_success_by_regime(summary, bounds, "toeplitz", out_dir / "fig3_toeplitz_by_regime")
+    if "toeplitz_strong" in set(summary["design"]):
+        fig_success_by_regime(summary, bounds, "toeplitz_strong", out_dir / "fig4_toeplitz_strong_by_regime")
 
 
 if __name__ == "__main__":

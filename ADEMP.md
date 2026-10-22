@@ -7,11 +7,11 @@
 | | |
 |---|---|
 | **Aims** | Reproduce Figs. 1–3. <br> (1) Does rescaling by $`\theta = n/(2k\log(p-k))`$ line up the success curves for different $`p`$? <br> (2) For $`\Sigma = I`$, is there a sharp transition at $`\theta^{\ast} = 1`$ in every sparsity regime? <br> (3) For a Toeplitz $`\Sigma`$, does the transition lie between the bounds $`\theta_\ell(\Sigma)`$ and $`\theta_u(\Sigma)`$ of eq. (29)? |
-| **Data-generating mechanisms** | $`y = X\beta^{\ast} + w`$ with $`w \sim N(0, \sigma^2 I)`$, $`\sigma = 0.5`$. <br> Rows of $`X`$ i.i.d. $`N(0, \Sigma)`$, with $`\Sigma = I`$ or Toeplitz $`\Sigma_{ij} = \mu^{\lvert i-j\rvert}`$, $`\mu = 0.10`$. <br> $`\beta^{\ast}`$ has a uniformly random support of size $`k`$ with entries $`\pm 0.5`$. <br> Fully crossed factors: design (2) × sparsity regime $`k(p)`$ (linear, sublinear, fractional power; 3) × $`p = 128, 256, 512`$ (3) × $`\theta = 0.1, 0.2, \dots, 2.4`$ (24), with $`n = \lceil 2\theta k\log(p-k)\rceil`$: 432 conditions. |
+| **Data-generating mechanisms** | $`y = X\beta^{\ast} + w`$ with $`w \sim N(0, \sigma^2 I)`$, $`\sigma = 0.5`$. <br> Rows of $`X`$ i.i.d. $`N(0, \Sigma)`$, with $`\Sigma = I`$ or Toeplitz $`\Sigma_{ij} = \mu^{\lvert i-j\rvert}`$ with $`\mu = 0.10`$ (as in the paper) or $`\mu = 0.50`$ (our extension). <br> $`\beta^{\ast}`$ has a uniformly random support of size $`k`$ with entries $`\pm 0.5`$. <br> Fully crossed factors: design (3) × sparsity regime $`k(p)`$ (linear, sublinear, fractional power; 3) × $`p = 128, 256, 512`$ (3) × $`\theta = 0.1, 0.2, \dots, 2.4`$ (24), with $`n = \lceil 2\theta k\log(p-k)\rceil`$: 648 conditions. |
 | **Estimand** | $`P_{\text{succ}}`$: the probability that the Lasso has a unique solution with exactly the correct signed support, $`\mathrm{sign}(\hat\beta) = \mathrm{sign}(\beta^{\ast})`$, for each condition. |
 | **Methods** | The Lasso with the paper's fixed $`\lambda_n = \sqrt{2\sigma^2\log(k)\log(p-k)/n}`$. <br> Success is decided exactly by the primal-dual witness (restricted Lasso on $`S`$, then the dual-feasibility and sign-consistency checks), which is equivalent to solving the Lasso (Lemmas 2–3). |
 | **Performance measures** | $`\hat P_{\text{succ}}`$ with Monte Carlo SE and 95% Wilson CI; empirical thresholds $`\hat\theta_{10}, \hat\theta_{50}, \hat\theta_{90}`$; curve collapse across $`p`$; diagnostics (which witness step fails, and by how many wrong variables); comparison with the paper and with the eq. (29) bounds. |
-| **Replicates** | $`R = 200`$ per condition, as in the paper (86,400 in total); worst-case Monte Carlo SE 0.035. One master seed with an independent random stream per replicate. |
+| **Replicates** | $`R = 200`$ per condition, as in the paper (129,600 in total); worst-case Monte Carlo SE 0.035. One master seed with an independent random stream per replicate. |
 
 Details for each part follow below.
 
@@ -23,6 +23,7 @@ Details for each part follow below.
 | Fig. 1(b) | Identity | Fractional power | rescaled sample size $`\theta`$ |
 | Fig. 2(a–c) | Identity | Linear, sublinear, fractional power | $`\theta`$ |
 | Fig. 3(a–c) | Toeplitz, $`\mu = 0.10`$ | Linear, sublinear, fractional power | $`\theta`$ |
+| Fig. 4 (extension, not in the paper) | Toeplitz, $`\mu = 0.50`$ | Linear, sublinear, fractional power | $`\theta`$ |
 
 The paper's main result (Theorems 3 and 4): when the rescaled sample size
 
@@ -69,6 +70,7 @@ The rows $`x_i`$ are i.i.d. $`N(0, \Sigma)`$, and a new $`X`$ is drawn for every
 |---|---|---|
 | Standard (uniform) Gaussian | $`\Sigma = I_p`$ | Figs. 1, 2 |
 | Toeplitz | $`\Sigma_{ij} = \mu^{\lvert i-j\rvert}`$, $`\mu = 0.10`$ | Fig. 3 |
+| Toeplitz, strong correlation (extension) | $`\Sigma_{ij} = \mu^{\lvert i-j\rvert}`$, $`\mu = 0.50`$ | Fig. 4 |
 
 For the Toeplitz case, generate $`X = Z L^\top`$, where $`L`$ is the Cholesky factor of $`\Sigma`$ (computed once per $`p`$) and $`Z`$ is $`n\times p`$ standard Gaussian, drawn exactly as in the identity case.
 
@@ -109,13 +111,13 @@ n = \lceil 2 \theta  k \log(p-k) \rceil .
 
 | Factor | Levels | # |
 |---|---|---|
-| Covariance Σ | Identity, Toeplitz ($`\mu=0.10`$) | 2 |
+| Covariance Σ | Identity, Toeplitz ($`\mu=0.10`$), Toeplitz ($`\mu=0.50`$, extension) | 3 |
 | Sparsity regime | Linear, sublinear, fractional power | 3 |
 | Problem size $`p`$ | 128, 256, 512 | 3 |
 | Rescaled sample size $`\theta`$ | 0.1, 0.2, …, 2.4 | 24 |
-| **Total conditions** | fully crossed | **432** |
+| **Total conditions** | fully crossed | **648** |
 | Replicates per condition | $`R = 200`$ (as in paper) | |
-| **Total replicates** | | **86,400** |
+| **Total replicates** | | **129,600** |
 
 Fixed across all conditions: $`\sigma = 0.5`$, $`\beta_{\min} = 0.5`$, $`\alpha = 0.40`$, $`\delta = 0.75`$, $`\lambda_n`$ as in Section 4.
 
@@ -263,16 +265,18 @@ All figures are saved in `results/figures/` as PDF (vector) and PNG.
 - **Fig. 1, diagnostic:** `fig1_pdw_diagnostics`, 1×2. (a) pass rates of PDW Step 3 (dual feasibility, solid) and Step 4 (sign consistency, dashed) vs. $`\theta`$: which step fails; (b) mean number of wrong variables entering, given Step 3 fails (log scale, points with ≥ 10 failing replicates): how badly it fails.
 - **Fig. 2, publication-quality:** `fig2_identity_by_regime`, 1×3 like the paper, one panel per sparsity regime (linear, sublinear, fractional power), shared axes. $`\hat P`$ vs. realized $`\theta`$, coloured and marker-coded by $`p`$, 95% Wilson CI bands, reference line at $`\theta^{\ast} = 1`$.
 - **Fig. 3, publication-quality:** `fig3_toeplitz_by_regime`, the same layout for the Toeplitz design, with the vertical lines of §3: the eq. (29) bounds $`\theta_\ell, \theta_u`$ dashed, and $`\rho_\ell, \rho_u`$ of $`\Sigma_{S^c|S}`$ dotted.
+- **Fig. 4, extension (not in the paper):** `fig4_toeplitz_strong_by_regime`, the same layout as Fig. 3 for the Toeplitz design with $`\mu = 0.50`$, a condition less favourable to the Lasso.
 
 ---
 
 ## 6. Key results
 
-Full run: 432 conditions × 200 replicates. The discussion of these results is in ANALYSIS.md.
+Full run: 648 conditions × 200 replicates. The discussion of these results is in ANALYSIS.md.
 
 1. **Overall.** The qualitative behaviour is reproduced, but our success rates are noticeably lower than the paper's in the transition region, in every design and sparsity regime (`results/paper_comparison.csv`).
 2. **Identity design (Figs. 1–2).** Rescaling by $`\theta`$ lines up the curves across $`p`$. The empirical threshold is $`\hat\theta_{50} = 0.99`$–$`1.23`$ across regimes and $`p`$, close to the theoretical $`\theta^{\ast} = 1`$ (`results/thresholds.csv`).
 3. **Toeplitz design (Fig. 3).** The transition lies between the eq. (29) bounds, $`\theta_\ell \approx 0.52`$–$`0.59`$ and $`\theta_u \approx 1.63`$–$`1.87`$, with $`\hat\theta_{50} = 1.09`$–$`1.29`$. The paper's vertical lines match only $`\rho_\ell \approx 0.89`$ and $`\rho_u = 1`$, not the full bounds (`results/theory_bounds.csv`).
 4. **Rescaling formula.** The paper is inconsistent about it: Section VII and the Fig. 1 caption use $`n/[2k\log(p-k)]`$, the Fig. 2 and Fig. 3 captions use $`n/[k\log(p-k)]`$. This study follows Section VII.
 5. **Diagnostics.** Below the threshold the Lasso fails mostly through dual feasibility (PDW Step 3), not sign consistency. Near the threshold a failure usually means only one or two wrong variables enter (`fig1_pdw_diagnostics`).
-6. **Method checks.** Both PDW versions gave identical verdicts on all 14,400 Fig. 1 replicates and agree with solving the full Lasso in the tests; the numerical solver converged on all 86,400 replicates.
+6. **Method checks.** Both PDW versions gave identical verdicts on all 14,400 Fig. 1 replicates and agree with solving the full Lasso in the tests; the numerical solver converged on all 129,600 replicates.
+7. **Extension: stronger correlation (Toeplitz, $`\mu = 0.50`$; Fig. 4).** A condition less favourable to the Lasso. Within the simulated range $`\theta \le 2.4`$ success reaches only about 0.35–0.45 (sublinear, fractional power) and stays near 0 for linear sparsity, where larger $`p`$ does worse. Incoherence still holds ($`\gamma \approx 0.20`$–$`0.24`$), but the eq. (29) bounds become uninformative ($`\theta_\ell \approx 0.05`$–$`0.09`$, $`\theta_u \approx 40`$–$`71`$).

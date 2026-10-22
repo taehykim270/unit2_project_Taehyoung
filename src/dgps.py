@@ -108,7 +108,7 @@ def design_covariance(p, design, toeplitz_mu=None):
     """Population covariance Sigma of the rows of X for a given design."""
     if design == "identity":
         return np.eye(p)
-    if design == "toeplitz":
+    if design.startswith("toeplitz"):
         if toeplitz_mu is None:
             raise ValueError("toeplitz design requires toeplitz_mu")
         return toeplitz_covariance(p, toeplitz_mu)
@@ -124,7 +124,7 @@ def generate_replicate(n, p, k, sigma, beta_min, rng, design="identity", toeplit
     """
     if design == "identity":
         X = generate_gaussian_design(n, p, rng)
-    elif design == "toeplitz":
+    elif design.startswith("toeplitz"):   # "toeplitz", "toeplitz_strong": differ only in mu
         if toeplitz_mu is None:
             raise ValueError("toeplitz design requires toeplitz_mu")
         X = generate_toeplitz_design(n, p, toeplitz_mu, rng)

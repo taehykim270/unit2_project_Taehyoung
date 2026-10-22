@@ -251,7 +251,7 @@ def summarize_theory_bounds(curves, config):
     """
     rows = []
     for _, c in curves.iterrows():
-        Sigma = design_covariance(int(c["p"]), c["design"], config["toeplitz_mu"])
+        Sigma = design_covariance(int(c["p"]), c["design"], config["toeplitz_mu"].get(c["design"]))
         key = (DESIGN_CODES[c["design"]], REGIME_CODES[c["regime"]], int(c["p"]))
         rng = np.random.default_rng(np.random.SeedSequence(config["master_seed"], spawn_key=key))
         draws = pd.DataFrame([threshold_constants(Sigma, np.sort(rng.choice(int(c["p"]), int(c["k"]), replace=False)))

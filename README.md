@@ -30,7 +30,7 @@ make reproduce
 
 This single command creates a virtual environment in `venv/` and installs `requirements.txt`
 into it, removes all generated files, runs the test suite, and reruns the full pipeline
-(simulation, summary tables, figures). It takes about 5 minutes. All `make` targets use
+(simulation, summary tables, figures). It takes about 7 minutes. All `make` targets use
 `venv/bin/python` automatically, so there is no need to activate the environment.
 
 ## Running individual steps
@@ -39,7 +39,7 @@ into it, removes all generated files, runs the test suite, and reruns the full p
 |---|---|
 | `make reproduce` | `setup`, `clean`, `test`, then `all`: a full from-scratch reproduction |
 | `make setup` | create `venv/` and install the dependencies |
-| `make simulate` | run all 432 conditions × 200 replicates and save the raw results to `results/raw/` |
+| `make simulate` | run all 648 conditions × 200 replicates and save the raw results to `results/raw/` |
 | `make analyze` | compute success rates, CIs, thresholds, curve collapse, the comparison with the paper and the theoretical bounds |
 | `make figures` | draw all figures (PDF and PNG) into `results/figures/` |
 | `make all` | `simulate`, then `analyze`, then `figures` (each step only reruns when its inputs changed) |
@@ -49,8 +49,8 @@ into it, removes all generated files, runs the test suite, and reruns the full p
 **Estimated runtime** (laptop, single core):
 - `make setup`: about 1 minute (downloads packages)
 - `make test`: about 5 seconds
-- `make reproduce`: about 5 minutes in total
-- `make all` from scratch: about 4 minutes. The simulation step dominates (215 s for 86,400 replicates); summaries and figures take a few seconds.
+- `make reproduce`: about 7 minutes in total
+- `make all` from scratch: about 6 minutes. The simulation step dominates (342 s for 129,600 replicates); summaries and figures take a few seconds.
 
 The simulation can also be run directly, for example
 `venv/bin/python -m src.simulation --n-reps 10` for a quick test run, or
@@ -71,6 +71,7 @@ The simulation can also be run directly, for example
 | `results/figures/fig1_pdw_diagnostics` | diagnostic figure: which step of the primal-dual witness fails, and how badly |
 | `results/figures/fig2_identity_by_regime` | Fig. 2: identity design, success probability by sparsity regime |
 | `results/figures/fig3_toeplitz_by_regime` | Fig. 3: Toeplitz design, with the theoretical thresholds |
+| `results/figures/fig4_toeplitz_strong_by_regime` | extension (not in the paper): Toeplitz design with μ = 0.5 |
 
 ## Repository structure
 
