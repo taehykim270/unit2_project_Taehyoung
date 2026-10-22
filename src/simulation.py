@@ -31,6 +31,10 @@ from tqdm import tqdm
 from src.dgps import generate_replicate, rescaled_sample_size, sample_size, sparsity_k
 from src.methods import CHECKS, FullLasso, regularization_lambda
 
+# ===========================================================================
+# CORE: configuration, seeding and the simulation loop
+# ===========================================================================
+
 # ---------------------------------------------------------------------------
 # Configuration: every simulation parameter lives here
 # ---------------------------------------------------------------------------
@@ -152,7 +156,11 @@ def run_simulation(config):
     return pd.DataFrame(records)
 
 
-def git_info():
+# ===========================================================================
+# SUPPORTING: provenance metadata, saving results, command line
+# ===========================================================================
+
+def _git_info():
     """Current commit hash and whether the working tree has uncommitted changes."""
     try:
         commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True,
@@ -164,7 +172,7 @@ def git_info():
         return {"commit": "unavailable", "dirty": None}   # e.g. no commits yet
 
 
-def provenance():
+def _provenance():
     """Environment and randomness metadata needed to reproduce a run."""
     packages = {name: metadata.version(name) for name in ("numpy", "scipy", "scikit-learn", "pandas")}
     return {"timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -173,7 +181,7 @@ def provenance():
             "rng": {"bit_generator": np.random.default_rng().bit_generator.__class__.__name__,
                     "seed_rule": SEED_RULE,
                     "design_codes": DESIGN_CODES, "regime_codes": REGIME_CODES},
-            "git": git_info()}
+            "git": _git_info()}
 
 
 def save_results(df, config, elapsed):
@@ -185,7 +193,7 @@ def save_results(df, config, elapsed):
     df.to_csv(raw_path, index=False)
 
     meta = {"config": config, "n_rows": len(df), "elapsed_seconds": round(elapsed, 1),
-            **provenance()}
+            **_provenance()}
     with open(out_dir / "simulation_config.json", "w") as f:
         json.dump(meta, f, indent=2)
 

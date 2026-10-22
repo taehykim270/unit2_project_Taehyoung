@@ -31,6 +31,10 @@ CURVE_SET_COLS = ["check", "design", "regime"]   # curves for different p that s
 logger = logging.getLogger(__name__)
 
 
+# ===========================================================================
+# CORE: success rate, uncertainty, failure severity and empirical thresholds
+# ===========================================================================
+
 # ---------------------------------------------------------------------------
 # Basic measures
 # ---------------------------------------------------------------------------
@@ -59,7 +63,7 @@ def wilson_interval(successes, n_reps, z=1.96):
     return low, high
 
 
-def threshold_crossing(x, y, level):
+def _threshold_crossing(x, y, level):
     """Smallest x at which the curve y(x) first reaches `level`, by linear interpolation.
 
     Returns NaN if the curve never reaches the level (or starts above it).
@@ -76,14 +80,6 @@ def threshold_crossing(x, y, level):
     i = above[0]
     x0, x1, y0, y1 = x[i - 1], x[i], y[i - 1], y[i]
     return float(x0 + (level - y0) * (x1 - x0) / (y1 - y0))
-
-
-def two_proportion_z(s1, n1, s2, n2):
-    """|p1 - p2| / pooled SE, the standard two-proportion z statistic (0 if both are all 0 or all 1)."""
-    p1, p2 = s1 / n1, s2 / n2
-    pooled = (s1 + s2) / (n1 + n2)
-    se = np.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2))
-    return 0.0 if se == 0 else float(abs(p1 - p2) / se)
 
 
 # ---------------------------------------------------------------------------
@@ -116,11 +112,11 @@ def summarize_conditions(raw):
         agree_rate = agree.groupby([checked[c] for c in CONDITION_COLS]).mean().rename("crosscheck_agreement")
         summary = summary.merge(agree_rate.reset_index(), on=CONDITION_COLS, how="left")
 
-    summary = summary.merge(summarize_failure_severity(raw), on=CONDITION_COLS, how="left")
+    summary = summary.merge(_summarize_failure_severity(raw), on=CONDITION_COLS, how="left")
     return summary
 
 
-def summarize_failure_severity(raw, z=1.96):
+def _summarize_failure_severity(raw, z=1.96):
     """How badly each PDW step fails, among the replicates where that step fails.
 
     violations : # wrong variables entering (|z_j| >= 1), given Step 3 fails
@@ -149,10 +145,22 @@ def summarize_thresholds(summary, x_col="theta_actual"):
     for keys, curve in summary.groupby(CURVE_COLS, sort=True):
         row = dict(zip(CURVE_COLS, keys))
         for level in (0.1, 0.5, 0.9):
-            row[f"theta_{int(level * 100)}"] = threshold_crossing(curve[x_col], curve["success_rate"], level)
+            row[f"theta_{int(level * 100)}"] = _threshold_crossing(curve[x_col], curve["success_rate"], level)
         row["transition_width"] = row["theta_90"] - row["theta_10"]
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+# ===========================================================================
+# SUPPORTING: curve collapse, comparison with the paper, theoretical bounds
+# ===========================================================================
+
+def _two_proportion_z(s1, n1, s2, n2):
+    """|p1 - p2| / pooled SE, the standard two-proportion z statistic (0 if both are all 0 or all 1)."""
+    p1, p2 = s1 / n1, s2 / n2
+    pooled = (s1 + s2) / (n1 + n2)
+    se = np.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2))
+    return 0.0 if se == 0 else float(abs(p1 - p2) / se)
 
 
 def summarize_collapse(summary):
@@ -167,7 +175,7 @@ def summarize_collapse(summary):
         best = {"z_max": 0.0, "abs_diff": 0.0, "pair": ""}
         for p1, p2 in itertools.combinations(sorted(at_theta.index), 2):
             a, b = at_theta.loc[p1], at_theta.loc[p2]
-            z = two_proportion_z(a["successes"], a["n_reps"], b["successes"], b["n_reps"])
+            z = _two_proportion_z(a["successes"], a["n_reps"], b["successes"], b["n_reps"])
             if z >= best["z_max"]:
                 best = {"z_max": z, "abs_diff": abs(a["success_rate"] - b["success_rate"]),
                         "pair": f"{p1}-{p2}"}

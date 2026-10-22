@@ -95,7 +95,7 @@ def generate_beta(p, k, beta_min, rng):
     return beta, support
 
 
-def generate_noise(n, sigma, rng):
+def _generate_noise(n, sigma, rng):
     """w ~ N(0, sigma^2 I_n)."""
     return sigma * rng.standard_normal(n)
 
@@ -132,7 +132,7 @@ def generate_replicate(n, p, k, sigma, beta_min, rng, design="identity", toeplit
         raise ValueError(f"unknown design: {design}")
 
     beta, support = generate_beta(p, k, beta_min, rng)
-    w = generate_noise(n, sigma, rng)
+    w = _generate_noise(n, sigma, rng)
     y = X @ beta + w
 
     return {"X": X, "y": y, "beta": beta, "support": support, "w": w}

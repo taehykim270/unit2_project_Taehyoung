@@ -27,35 +27,13 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import Lasso
 
 
+# ===========================================================================
+# CORE: the method (lambda_n) and the primal-dual witness checks
+# ===========================================================================
+
 def regularization_lambda(n, p, k, sigma):
     """lambda_n = sqrt(2 sigma^2 log(k) log(p - k) / n)   (Section VII)."""
     return math.sqrt(2.0 * sigma**2 * math.log(k) * math.log(p - k) / n)
-
-
-def lasso_fit_status(X, y, lam, tol=1e-10, max_iter=100_000):
-    """Coordinate-descent Lasso; returns (coef, converged).
-
-    scikit-learn's objective (1 / 2n) ||y - X b||^2 + alpha ||b||_1 is exactly eq. (3)
-    with alpha = lambda_n. A ConvergenceWarning is caught and reported as converged=False
-    instead of being printed, so non-converged fits are recorded rather than silently used.
-    """
-    model = Lasso(alpha=lam, fit_intercept=False, tol=tol, max_iter=max_iter)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always", ConvergenceWarning)
-        model.fit(X, y)
-    converged = not any(issubclass(w.category, ConvergenceWarning) for w in caught)
-    return model.coef_, converged
-
-
-def lasso_fit(X, y, lam, tol=1e-10, max_iter=100_000):
-    """Coordinate-descent Lasso coefficients (see lasso_fit_status)."""
-    return lasso_fit_status(X, y, lam, tol=tol, max_iter=max_iter)[0]
-
-
-def signed_support_recovered(beta_hat, beta, zero_tol=1e-8):
-    """True if sign(beta_hat) == sign(beta*) coordinate-wise, treating |beta_hat_j| < zero_tol as 0."""
-    beta_hat = np.where(np.abs(beta_hat) < zero_tol, 0.0, beta_hat)
-    return bool(np.array_equal(np.sign(beta_hat), np.sign(beta)))
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +133,7 @@ class PDWRestrictedLasso(PrimalDualWitness):
         self.max_iter = max_iter
 
     def restricted_solution(self, X_S, y, beta_S, lam):
-        return lasso_fit_status(X_S, y, lam, tol=self.solver_tol, max_iter=self.max_iter)
+        return _lasso_fit_status(X_S, y, lam, tol=self.solver_tol, max_iter=self.max_iter)
 
 
 class PDWClosedForm(PrimalDualWitness):
@@ -174,6 +152,36 @@ class PDWClosedForm(PrimalDualWitness):
         n = X_S.shape[0]
         z_S = np.sign(beta_S)
         return np.linalg.solve(X_S.T @ X_S, X_S.T @ y - n * lam * z_S), True   # no iterative solver
+
+
+# ===========================================================================
+# SUPPORTING: numerical Lasso solver, full-Lasso cross-check, registry
+# ===========================================================================
+
+def _lasso_fit_status(X, y, lam, tol=1e-10, max_iter=100_000):
+    """Coordinate-descent Lasso; returns (coef, converged).
+
+    scikit-learn's objective (1 / 2n) ||y - X b||^2 + alpha ||b||_1 is exactly eq. (3)
+    with alpha = lambda_n. A ConvergenceWarning is caught and reported as converged=False
+    instead of being printed, so non-converged fits are recorded rather than silently used.
+    """
+    model = Lasso(alpha=lam, fit_intercept=False, tol=tol, max_iter=max_iter)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", ConvergenceWarning)
+        model.fit(X, y)
+    converged = not any(issubclass(w.category, ConvergenceWarning) for w in caught)
+    return model.coef_, converged
+
+
+def lasso_fit(X, y, lam, tol=1e-10, max_iter=100_000):
+    """Coordinate-descent Lasso coefficients (see _lasso_fit_status)."""
+    return _lasso_fit_status(X, y, lam, tol=tol, max_iter=max_iter)[0]
+
+
+def _signed_support_recovered(beta_hat, beta, zero_tol=1e-8):
+    """True if sign(beta_hat) == sign(beta*) coordinate-wise, treating |beta_hat_j| < zero_tol as 0."""
+    beta_hat = np.where(np.abs(beta_hat) < zero_tol, 0.0, beta_hat)
+    return bool(np.array_equal(np.sign(beta_hat), np.sign(beta)))
 
 
 # ---------------------------------------------------------------------------
@@ -195,9 +203,9 @@ class FullLasso(SupportRecoveryCheck):
         self.max_iter = max_iter
 
     def check(self, data, lam):
-        beta_hat, converged = lasso_fit_status(data["X"], data["y"], lam,
+        beta_hat, converged = _lasso_fit_status(data["X"], data["y"], lam,
                                                tol=self.solver_tol, max_iter=self.max_iter)
-        return {"success": signed_support_recovered(beta_hat, data["beta"], self.zero_tol),
+        return {"success": _signed_support_recovered(beta_hat, data["beta"], self.zero_tol),
                 "dual_feasible": np.nan, "sign_consistent": np.nan,
                 "max_abs_z": np.nan, "sign_margin": np.nan,
                 "n_violations": np.nan, "n_sign_errors": np.nan,

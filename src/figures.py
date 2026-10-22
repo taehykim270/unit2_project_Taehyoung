@@ -99,7 +99,7 @@ def select_check(summary, check):
     return selected
 
 
-def plot_curves(ax, curves, x_col, y_col, low_col=None, high_col=None, show_k=True):
+def _plot_curves(ax, curves, x_col, y_col, low_col=None, high_col=None, show_k=True):
     """One line per p, with an optional shaded uncertainty band."""
     for p, curve in curves.groupby("p"):
         style = P_STYLE[p]
@@ -119,13 +119,13 @@ def fig1_success(summary, out_path):
     fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
 
     ax = axes[0]
-    plot_curves(ax, curves, "n", "success_rate", "ci_low", "ci_high")
+    _plot_curves(ax, curves, "n", "success_rate", "ci_low", "ci_high")
     ax.set_xlabel("Number of samples n")
     ax.set_ylabel("Probability of exact signed-support recovery")
     ax.set_title("(a) Against raw sample size n")
 
     ax = axes[1]
-    plot_curves(ax, curves, "theta_actual", "success_rate", "ci_low", "ci_high")
+    _plot_curves(ax, curves, "theta_actual", "success_rate", "ci_low", "ci_high")
     ax.axvline(1.0, color=REFERENCE, linestyle="--", linewidth=1)
     ax.text(1.02, 0.03, "theory: θ* = 1", color=REFERENCE, fontsize=9)
     ax.set_xlabel("Rescaled sample size θ = n / [2k log(p − k)]")
@@ -152,7 +152,7 @@ def fig1_diagnostics(summary, out_path):
     axes = axes.ravel()
 
     ax = axes[0]
-    plot_curves(ax, curves, "theta_actual", "max_abs_z_median", "max_abs_z_q10", "max_abs_z_q90")
+    _plot_curves(ax, curves, "theta_actual", "max_abs_z_median", "max_abs_z_q10", "max_abs_z_q90")
     ax.axhline(1.0, color=REFERENCE, linestyle="--", linewidth=1)
     ax.text(curves["theta_actual"].max(), 1.03, "feasibility bound |z| < 1",
             color=REFERENCE, fontsize=9, ha="right", va="bottom")
@@ -162,18 +162,18 @@ def fig1_diagnostics(summary, out_path):
     ax.legend(loc="upper right")
 
     ax = axes[1]
-    plot_curves(ax, curves, "theta_actual", "dual_feasible_rate")
+    _plot_curves(ax, curves, "theta_actual", "dual_feasible_rate")
     ax.set_ylabel("Pass rate")
     ax.set_title("(b) PDW Step 3: strict dual feasibility")
 
     ax = axes[2]
-    plot_curves(ax, curves, "theta_actual", "sign_consistent_rate")
+    _plot_curves(ax, curves, "theta_actual", "sign_consistent_rate")
     ax.set_ylabel("Pass rate")
     ax.set_title("(c) PDW Step 4: sign consistency")
 
     ax = axes[3]
     severity = curves[curves["fail_reps_violations"] >= MIN_FAIL_REPS]
-    plot_curves(ax, severity, "theta_actual", "mean_violations", "mean_violations_lo", "mean_violations_hi")
+    _plot_curves(ax, severity, "theta_actual", "mean_violations", "mean_violations_lo", "mean_violations_hi")
     ax.axhline(1.0, color=REFERENCE, linestyle="--", linewidth=1)
     # counts are >= 1 and span ~1 to ~50: a log axis shows both ends honestly
     ax.set_yscale("log")
@@ -216,7 +216,7 @@ def fig23_success_grid(summary, bounds, out_path):
         for j, regime in enumerate(regimes):
             ax = axes[i, j]
             curves = summary[(summary["design"] == design) & (summary["regime"] == regime)]
-            plot_curves(ax, curves, "theta_actual", "success_rate", "ci_low", "ci_high", show_k=False)
+            _plot_curves(ax, curves, "theta_actual", "success_rate", "ci_low", "ci_high", show_k=False)
 
             b = bounds[(bounds["design"] == design) & (bounds["regime"] == regime)]
             for col, style in [("theta_l_mean", "--"), ("theta_u_mean", "--"),
