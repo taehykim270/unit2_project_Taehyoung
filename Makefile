@@ -1,4 +1,5 @@
 # Reproducing Wainwright (2009) - simulation pipeline
+#   make reproduce everything from scratch: setup -> clean -> test -> all
 #   make setup     create venv/ and install requirements.txt
 #   make all       run simulation -> summaries -> figures
 #   make simulate  run simulations and save raw results
@@ -16,7 +17,15 @@ RAW      := results/raw/simulation_raw.csv
 SUMMARY  := results/summary.csv
 FIG1     := results/figures/fig1_success_vs_n_and_theta.png
 
-.PHONY: setup all simulate analyze figures test clean
+.PHONY: reproduce setup all simulate analyze figures test clean
+
+# One command for a full from-scratch reproduction. Sub-makes run in sequence, so the steps
+# after setup use the venv it creates (even on a fresh clone without venv/)
+reproduce:
+	$(MAKE) setup
+	$(MAKE) clean
+	$(MAKE) test
+	$(MAKE) all
 
 # Create the virtual environment (if missing) and install dependencies
 setup:
