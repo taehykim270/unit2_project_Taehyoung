@@ -192,11 +192,16 @@ with the regularization parameter fixed as in the paper (not tuned by cross-vali
 By Lemmas 2–3, the PDW succeeds exactly when the Lasso has a unique solution with the correct signed support. That means the success indicator can be computed exactly in closed form, without running an iterative solver. Writing $`z_S = \mathrm{sign}(\beta^{\ast}_S)`$:
 
 1. **Restricted solution:** compute the error on the true support (eq. 11):
-   $`\displaystyle \Delta = (\tfrac{1}{n}X_S^\top X_S)^{-1}[\tfrac{1}{n}X_S^\top w - \lambda_n z_S].`$
+
+   $`\displaystyle \Delta = \Big(\frac{1}{n}X_S^\top X_S\Big)^{-1}\Big[\frac{1}{n}X_S^\top w - \lambda_n z_S\Big].`$
+
 2. **Subgradient on $`S`$:** set it to $`z_S = \mathrm{sign}(\beta^{\ast}_S)`$.
 3. **Strict dual feasibility:** for $`j \in S^c`$, compute (eq. 10)
-   $`\displaystyle Z_j = X_j^\top[X_S(X_S^\top X_S)^{-1}z_S + \Pi_{X_S^\perp}(\tfrac{w}{\lambda_n n})],`$
+
+   $`\displaystyle Z_j = X_j^\top\Big[X_S(X_S^\top X_S)^{-1}z_S + \Pi_{X_S^\perp}\Big(\frac{w}{\lambda_n n}\Big)\Big],`$
+
    with $`\Pi_{X_S^\perp} = I - X_S(X_S^\top X_S)^{-1}X_S^\top`$. Check that $`\max_{j\in S^c}|Z_j| < 1`$.
+
 4. **Sign consistency:** check $`\mathrm{sign}(\beta^{\ast}_i + \Delta_i) = \mathrm{sign}(\beta^{\ast}_i)`$ for all $`i \in S`$.
 
 The replicate succeeds if and only if Steps 3 and 4 both pass.
