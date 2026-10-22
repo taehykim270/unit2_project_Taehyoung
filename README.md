@@ -16,11 +16,11 @@ is not included in this repository; see the DOI above.
 
 ## Key findings
 
-The main patterns are reproduced. Plotting success against θ brings the curves for different
-p close together. Success rises near θ = 1 for the identity design and between the bounds
-in eq. (29) for the correlated Toeplitz design. Our success rates are lower than the paper's
-where success rises from low to high (the transition region). The captions of the paper's
-Figs. 2 and 3 also give a different rescaling formula from its main text.
+The main patterns are reproduced: plotting success against θ brings the curves for different
+p close together, with the rise near θ = 1 for the identity design and between the eq. (29)
+bounds for the Toeplitz design. Our success rates are lower than the paper's in the transition
+region, and the captions of the paper's Figs. 2 and 3 give a different rescaling formula from
+its main text.
 
 ## Reproducing everything
 

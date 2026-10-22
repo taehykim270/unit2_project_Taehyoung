@@ -1,5 +1,7 @@
 # Critical Analysis: Reproducing Wainwright (2009)
 
+https://github.com/taehykim270/unit2_project_Taehyoung
+
 **Use of AI.** I used Claude (Anthropic) to write code, tests and documentation drafts. I planned the work, made design decisions, checked the code and outputs, and requested corrections. My decisions included the primal-dual-witness step order, the θ grid, and which checks, results and figures to keep. The development history is recorded in the repository's git commits. Codex helped simplify the wording of this analysis.
 
 ## 1. How well were the results reproduced?
@@ -32,7 +34,7 @@ The curves do not overlap perfectly after rescaling. For larger p, success rises
 
 ## 5. What was surprising
 
-I expected smoother, steadily increasing curves. On our finer θ grid, 4 of the 9 identity-design curves dip by more than 0.03 (e.g., p = 128 at θ = 1.2). These dips are within Monte Carlo error (SE ≤ 0.035), but noise at one grid point can shift the estimated threshold. The consistently lower success rates were also unexpected, as was larger p doing worse for linear sparsity with μ = 0.5 (success at θ = 2.4 fell from 0.075 to 0 as p grew from 128 to 512).
+I expected smoother, steadily increasing curves. On our finer θ grid, 4 of the 9 identity-design curves dip by more than 0.03 (e.g., 0.08 for linear sparsity, p = 128 at θ = 1.7). These dips are within Monte Carlo error (SE ≤ 0.035), but noise at one grid point can shift the estimated threshold. The consistently lower success rates were also unexpected, as was larger p doing worse for linear sparsity with μ = 0.5 (success at θ = 2.4 fell from 0.075 to 0 as p grew from 128 to 512).
 
 ## 6. Most challenging aspects
 
