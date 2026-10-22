@@ -3,9 +3,9 @@ Figures built from results/summary.csv (run `python -m src.metrics` first).
 Each figure is saved as PDF (vector, for reports) and PNG (for the README).
 
     fig1_success_vs_n_and_theta   publication figure: Fig. 1(a) and 1(b) of the paper
-    fig1_pdw_diagnostics          diagnostic figure: why the Lasso fails below threshold
-    fig2_fig3_success_grid        publication figure: Figs. 2 and 3 of the paper as one grid
-                                  (rows = design, columns = sparsity regime), with the
+    fig1_pdw_diagnostics          diagnostic figure: which primal-dual witness step fails, and how badly
+    fig2_identity_by_regime       publication figure: Fig. 2 of the paper (identity design, one panel per regime)
+    fig3_toeplitz_by_regime       publication figure: Fig. 3 of the paper (Toeplitz design), with the
                                   theoretical thresholds from results/theory_bounds.csv
 
 Only rows produced by one support-recovery check are plotted (default: CONFIG["check"]).
@@ -45,8 +45,7 @@ REFERENCE = "#52514e"
 # Failure-severity points need enough failing replicates for a stable mean
 MIN_FAIL_REPS = 10
 
-# Panel order and labels for the Figs. 2-3 grid
-DESIGN_ORDER = ["identity", "toeplitz"]
+# Panel order and labels for Figs. 2-3
 REGIME_ORDER = ["linear", "sublinear", "fractional"]
 DESIGN_LABELS = {"identity": r"Identity ($\Sigma = I$)",
                  "toeplitz": rf"Toeplitz ($\mu = {CONFIG['toeplitz_mu']}$)"}
@@ -99,7 +98,8 @@ def select_check(summary, check):
     return selected
 
 
-def _plot_curves(ax, curves, x_col, y_col, low_col=None, high_col=None, show_k=True):
+def _plot_curves(ax, curves, x_col, y_col, low_col=None, high_col=None, show_k=True,
+                 linestyle="-", labelled=True, markersize=4):
     """One line per p, with an optional shaded uncertainty band."""
     for p, curve in curves.groupby("p"):
         style = P_STYLE[p]
@@ -109,7 +109,7 @@ def _plot_curves(ax, curves, x_col, y_col, low_col=None, high_col=None, show_k=T
             ax.fill_between(curve[x_col], curve[low_col], curve[high_col],
                             color=style["color"], alpha=0.15, linewidth=0)
         ax.plot(curve[x_col], curve[y_col], color=style["color"], marker=style["marker"],
-                markersize=4, linewidth=1.5, label=label)
+                markersize=markersize, linewidth=1.5, linestyle=linestyle, label=label if labelled else None)
 
 
 def fig1_success(summary, out_path):
@@ -143,106 +143,107 @@ def fig1_success(summary, out_path):
 
 
 def fig1_diagnostics(summary, out_path):
-    """Diagnostic: max |z_j| (dual feasibility), pass rates of PDW Steps 3 and 4,
-    and how many wrong variables enter when Step 3 fails."""
+    """Diagnostic for Fig. 1: (a) which primal-dual witness step fails, (b) how badly it fails."""
     curves = summary[(summary["design"] == "identity") & (summary["regime"] == "fractional")]
     curves = curves[curves["max_abs_z_median"].notna()]   # drop n <= k conditions
 
-    fig, axes = plt.subplots(2, 2, figsize=(11, 7.5))
-    axes = axes.ravel()
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.3))
 
     ax = axes[0]
-    _plot_curves(ax, curves, "theta_actual", "max_abs_z_median", "max_abs_z_q10", "max_abs_z_q90")
-    ax.axhline(1.0, color=REFERENCE, linestyle="--", linewidth=1)
-    ax.text(curves["theta_actual"].max(), 1.03, "feasibility bound |z| < 1",
-            color=REFERENCE, fontsize=9, ha="right", va="bottom")
-    ax.set_ylim(0.5, 3.0)   # theta <= 0.2 values (up to ~15) are cut off to show the region near 1
-    ax.set_ylabel(r"$\max_{j \notin S} |z_j|$")
-    ax.set_title("(a) Dual-feasibility statistic\n(median, 10–90% band; y-axis cut at 3)")
-    ax.legend(loc="upper right")
+    _plot_curves(ax, curves, "theta_actual", "dual_feasible_rate", show_k=False)
+    _plot_curves(ax, curves, "theta_actual", "sign_consistent_rate", linestyle="--", labelled=False)
+    ax.set_ylim(-0.02, 1.02)
+    ax.set_ylabel("Fraction of replicates passing the step")
+    ax.set_title("(a) Pass rate of each primal-dual witness step")
 
     ax = axes[1]
-    _plot_curves(ax, curves, "theta_actual", "dual_feasible_rate")
-    ax.set_ylabel("Pass rate")
-    ax.set_title("(b) PDW Step 3: strict dual feasibility")
-
-    ax = axes[2]
-    _plot_curves(ax, curves, "theta_actual", "sign_consistent_rate")
-    ax.set_ylabel("Pass rate")
-    ax.set_title("(c) PDW Step 4: sign consistency")
-
-    ax = axes[3]
     severity = curves[curves["fail_reps_violations"] >= MIN_FAIL_REPS]
-    _plot_curves(ax, severity, "theta_actual", "mean_violations", "mean_violations_lo", "mean_violations_hi")
-    ax.axhline(1.0, color=REFERENCE, linestyle="--", linewidth=1)
+    _plot_curves(ax, severity, "theta_actual", "mean_violations", "mean_violations_lo", "mean_violations_hi",
+                 labelled=False)
+    ax.axhline(1.0, color=MUTED, linestyle="-", linewidth=0.8)   # one wrong variable (not dashed: dashed = Step 4)
     # counts are >= 1 and span ~1 to ~50: a log axis shows both ends honestly
     ax.set_yscale("log")
     ax.set_yticks([1, 2, 5, 10, 20, 50])
     ax.yaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     ax.set_ylim(0.9, None)
-    ax.set_ylabel(r"Mean #$\{j \notin S: |z_j| \geq 1\}$ (log scale)")
-    ax.set_title(f"(d) Wrong variables entering, given Step 3 fails\n"
-                 f"(mean, 95% CI; points with ≥ {MIN_FAIL_REPS} failing reps)")
+    ax.set_ylabel("Mean number of wrong variables (log scale)")
+    ax.set_title("(b) Wrong variables selected, among replicates failing Step 3")
 
     for ax in axes:
         ax.set_xlabel("Rescaled sample size θ")
         ax.axvline(1.0, color=REFERENCE, linestyle=":", linewidth=1)
-        ax.set_xlim(axes[0].get_xlim())   # same theta range in every panel
-    for ax in axes[1:3]:
-        ax.set_ylim(-0.02, 1.02)
+        ax.set_xlim(axes[0].get_xlim())   # same theta range in both panels
 
-    fig.suptitle("Diagnostics: which PDW step fails (standard Gaussian design, fractional power sparsity)",
+    # two legend rows: colours = p, line styles = PDW step
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncol=len(labels), frameon=False,
+               bbox_to_anchor=(0.5, 0.01))
+    step_handles = [Line2D([], [], color=REFERENCE, linestyle="-", linewidth=1.5),
+                    Line2D([], [], color=REFERENCE, linestyle="--", linewidth=1.5)]
+    step_labels = ["Step 3: no wrong variable enters (dual feasibility)",
+                   "Step 4: true variables kept with correct signs (sign consistency)"]
+    fig.legend(step_handles, step_labels, loc="lower center", ncol=2, frameon=False,
+               bbox_to_anchor=(0.5, -0.05))
+    axes[1].text(0.98, 0.97, f"points with ≥ {MIN_FAIL_REPS} failing reps\nbands = 95% CI",
+                 transform=axes[1].transAxes, color=MUTED, fontsize=8, ha="right", va="top")
+    fig.suptitle("Diagnostics for Fig. 1 (not in the paper): why and how badly the Lasso misses the support\n"
+                 "identity design, fractional power sparsity; success requires passing both steps",
                  fontsize=10, color=INK)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.1, 1, 1))
     save_figure(fig, out_path)
 
 
-def fig23_success_grid(summary, bounds, out_path):
-    """Figs. 2-3 as small multiples: success probability vs theta,
-    rows = design (identity, Toeplitz), columns = sparsity regime.
+def fig_success_by_regime(summary, bounds, design, out_path):
+    """Figs. 2-3: success probability vs theta for one design, one panel per sparsity regime.
 
-    Vertical lines (averaged over p; they barely depend on p):
-      dashed  eq. (29) thresholds theta_l(Sigma), theta_u(Sigma), mean over random supports
-      dotted  rho_l(Sigma_{S^c|S}), rho_u(Sigma_{S^c|S}) alone, the values the paper's Fig. 3 lines match
-    For the identity design all four equal 1.
+    identity: one dashed line at theta* = 1 (there theta_l = theta_u = 1).
+    toeplitz: dashed = eq. (29) thresholds theta_l, theta_u (mean over random supports);
+              dotted = rho_l, rho_u of Sigma_{S^c|S} alone, which the paper's Fig. 3 lines match.
+    Lines are averaged over p; they barely depend on p.
     """
-    designs = [d for d in DESIGN_ORDER if d in set(summary["design"])]
     regimes = [r for r in REGIME_ORDER if r in set(summary["regime"])]
-    fig, axes = plt.subplots(len(designs), len(regimes), figsize=(12, 3.6 * len(designs)),
-                             sharex=True, sharey=True, squeeze=False)
+    fig, axes = plt.subplots(1, len(regimes), figsize=(12, 4.2), sharex=True, sharey=True, squeeze=False)
+    axes = axes[0]
 
-    for i, design in enumerate(designs):
-        for j, regime in enumerate(regimes):
-            ax = axes[i, j]
-            curves = summary[(summary["design"] == design) & (summary["regime"] == regime)]
-            _plot_curves(ax, curves, "theta_actual", "success_rate", "ci_low", "ci_high", show_k=False)
+    for ax, regime in zip(axes, regimes):
+        curves = summary[(summary["design"] == design) & (summary["regime"] == regime)]
+        _plot_curves(ax, curves, "theta_actual", "success_rate", "ci_low", "ci_high", show_k=False,
+                     markersize=2.8)
+        b = bounds[(bounds["design"] == design) & (bounds["regime"] == regime)]
+        if design == "identity":
+            ax.axvline(1.0, color=REFERENCE, linestyle="--", linewidth=1)
+        else:
+            # each line is labelled just above the plot area, where no data is drawn
+            for col, style, label, ha in [("theta_l_mean", "--", r"$\theta_\ell$", "center"),
+                                          ("theta_u_mean", "--", r"$\theta_u$", "center"),
+                                          ("rho_l_mean", ":", r"$\rho_\ell$", "right"),
+                                          ("rho_u_mean", ":", r"$\rho_u$", "left")]:
+                x = b[col].mean()
+                ax.axvline(x, color=REFERENCE, linestyle=style, linewidth=1)
+                ax.text(x, 1.01, label, transform=ax.get_xaxis_transform(), color=REFERENCE,
+                        fontsize=9, ha=ha, va="bottom")
+        ax.set_ylim(-0.02, 1.02)
+        ax.set_xlim(left=0)
+        ax.set_title(REGIME_LABELS[regime], pad=16)
+        ax.set_xlabel("Rescaled sample size θ = n / [2k log(p − k)]")
+    axes[0].set_ylabel("Prob. of exact signed-support recovery")
 
-            b = bounds[(bounds["design"] == design) & (bounds["regime"] == regime)]
-            for col, style in [("theta_l_mean", "--"), ("theta_u_mean", "--"),
-                               ("rho_l_mean", ":"), ("rho_u_mean", ":")]:
-                ax.axvline(b[col].mean(), color=REFERENCE, linestyle=style, linewidth=1)
-
-            ax.set_ylim(-0.02, 1.02)
-            ax.set_xlim(left=0)
-            if i == 0:
-                ax.set_title(REGIME_LABELS[regime])
-            if j == 0:
-                ax.set_ylabel(f"{DESIGN_LABELS[design]}\nProb. of exact signed-support recovery")
-            if i == len(designs) - 1:
-                ax.set_xlabel("Rescaled sample size θ = n / [2k log(p − k)]")
-
-    handles, labels = axes[0, 0].get_legend_handles_labels()
-    handles += [Line2D([], [], color=REFERENCE, linestyle="--", linewidth=1),
-                Line2D([], [], color=REFERENCE, linestyle=":", linewidth=1)]
-    labels += [r"eq. (29) bounds $\theta_\ell, \theta_u$ (mean over random $S$)",
-               r"$\rho_\ell, \rho_u$ of $\Sigma_{S^c|S}$ alone"]
+    handles, labels = axes[0].get_legend_handles_labels()
+    if design == "identity":
+        handles.append(Line2D([], [], color=REFERENCE, linestyle="--", linewidth=1))
+        labels.append(r"theory: $\theta^* = 1$")
+    else:
+        handles += [Line2D([], [], color=REFERENCE, linestyle="--", linewidth=1),
+                    Line2D([], [], color=REFERENCE, linestyle=":", linewidth=1)]
+        labels += [r"$\theta_\ell, \theta_u$: theoretical bounds, eq. (29)",
+                   r"$\rho_\ell, \rho_u$: numerators of eq. (29), matching the paper's lines"]
     fig.legend(handles, labels, loc="lower center", ncol=len(labels), frameon=False,
-               bbox_to_anchor=(0.5, -0.01))
-    fig.suptitle(rf"Lasso support recovery by design and sparsity regime ($\alpha = {CONFIG['alpha']}$, "
+               bbox_to_anchor=(0.5, -0.02))
+    fig.suptitle(rf"Lasso support recovery, {DESIGN_LABELS[design]} design ($\alpha = {CONFIG['alpha']}$, "
                  rf"$\delta = {CONFIG['delta']}$; 200 reps per point; bands = 95% Wilson CI)",
                  fontsize=10, color=INK)
-    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
     save_figure(fig, out_path)
 
 
@@ -263,7 +264,9 @@ def main():
 
     fig1_success(summary, out_dir / "fig1_success_vs_n_and_theta")
     fig1_diagnostics(summary, out_dir / "fig1_pdw_diagnostics")
-    fig23_success_grid(summary, pd.read_csv(args.bounds), out_dir / "fig2_fig3_success_grid")
+    bounds = pd.read_csv(args.bounds)
+    fig_success_by_regime(summary, bounds, "identity", out_dir / "fig2_identity_by_regime")
+    fig_success_by_regime(summary, bounds, "toeplitz", out_dir / "fig3_toeplitz_by_regime")
 
 
 if __name__ == "__main__":

@@ -14,9 +14,8 @@ data/simulated/*
 !results/raw/.gitkeep
 !data/simulated/.gitkeep
 
-# Local-only documents: licensed copy of the paper (cited in README) and raw working notes
-docs/*.pdf
-docs/Critical_Analysis_Doc.tex
+# Local-only documents (licensed copy of the paper, cited in README; working notes)
+docs/
 
 # OS / editor
 .DS_Store

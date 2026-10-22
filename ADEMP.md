@@ -255,15 +255,14 @@ The PDW uses the true support $`S`$. That is legitimate: it certifies what the f
 | **Failure severity** | Mean number of wrong variables entering, among replicates that fail Step 3 (and mean number of sign errors, among those that fail Step 4), with a normal-approximation 95% CI | Diagnostic: shows *how badly* the Lasso fails, e.g. by one extra variable or by many |
 | **Curve collapse (Fig. 1)** | At each $`\theta`$: the largest two-proportion $`z`$ statistic $`\lvert \hat P_{p_1} - \hat P_{p_2}\rvert  / \text{SE}_{\text{pooled}}`$ over all pairs of $`p`$ (`results/collapse.csv`); $`z < 2`$ means overlap within Monte Carlo error | Measures how well the rescaling works |
 
-**Comparison with the paper** (`results/paper_comparison.csv`): approximate success rates read off the paper's Fig. 1(b) (`docs/paper_values.csv`) are compared with our success rate and Wilson CI, interpolated along our curve at the same $`\theta`$.
+**Comparison with the paper** (`results/paper_comparison.csv`): approximate success rates read off the paper's Figs. 1(b), 2 and 3 (`data/paper_values.csv`) are compared with our success rate and Wilson CI, interpolated along our curve at the same $`\theta`$.
 
 **Figures:**
 All figures are saved in `results/figures/` as PDF (vector) and PNG.
 - **Fig. 1, publication-quality:** `fig1_success_vs_n_and_theta`, 1×2 like the paper. (a) $`\hat P`$ vs. $`n`$; (b) $`\hat P`$ vs. realized $`\theta`$. Colored and marker-coded by $`p`$, 95% Wilson CI bands, reference line at $`\theta = 1`$.
-- **Fig. 1, diagnostic:** `fig1_pdw_diagnostics`. (a) median and 10–90% band of $`\max_{j\in S^c}|z_j|`$ vs. $`\theta`$, with the bound $`|z| = 1`$; (b) pass rate of Step 3 (dual feasibility); (c) pass rate of Step 4 (sign consistency); (d) mean number of wrong variables entering, given Step 3 fails (points with ≥ 10 failing replicates).
-- **Figs. 2–3, publication-quality:** `fig2_fig3_success_grid`, one 2 × 3 grid of small multiples. Rows are the design (identity = Fig. 2, Toeplitz = Fig. 3), columns the sparsity regime (linear, sublinear, fractional power); axes are shared.
-  - Each panel shows $`\hat P`$ vs. realized $`\theta`$, coloured and marker-coded by $`p`$, with 95% Wilson CI bands.
-  - Vertical lines (see §3): the eq. (29) bounds $`\theta_\ell, \theta_u`$ dashed, and $`\rho_\ell, \rho_u`$ of $`\Sigma_{S^c|S}`$ dotted.
+- **Fig. 1, diagnostic:** `fig1_pdw_diagnostics`, 1×2. (a) pass rates of PDW Step 3 (dual feasibility, solid) and Step 4 (sign consistency, dashed) vs. $`\theta`$: which step fails; (b) mean number of wrong variables entering, given Step 3 fails (log scale, points with ≥ 10 failing replicates): how badly it fails.
+- **Fig. 2, publication-quality:** `fig2_identity_by_regime`, 1×3 like the paper, one panel per sparsity regime (linear, sublinear, fractional power), shared axes. $`\hat P`$ vs. realized $`\theta`$, coloured and marker-coded by $`p`$, 95% Wilson CI bands, reference line at $`\theta^{\ast} = 1`$.
+- **Fig. 3, publication-quality:** `fig3_toeplitz_by_regime`, the same layout for the Toeplitz design, with the vertical lines of §3: the eq. (29) bounds $`\theta_\ell, \theta_u`$ dashed, and $`\rho_\ell, \rho_u`$ of $`\Sigma_{S^c|S}`$ dotted.
 
 ---
 
@@ -271,7 +270,7 @@ All figures are saved in `results/figures/` as PDF (vector) and PNG.
 
 Full run: 432 conditions × 200 replicates. The discussion of these results is in ANALYSIS.md.
 
-1. **Overall.** The qualitative behaviour is reproduced, but our success rates are noticeably lower than the paper's in the transition region (`results/paper_comparison.csv`).
+1. **Overall.** The qualitative behaviour is reproduced, but our success rates are noticeably lower than the paper's in the transition region, in every design and sparsity regime (`results/paper_comparison.csv`).
 2. **Identity design (Figs. 1–2).** Rescaling by $`\theta`$ lines up the curves across $`p`$. The empirical threshold is $`\hat\theta_{50} = 0.99`$–$`1.23`$ across regimes and $`p`$, close to the theoretical $`\theta^{\ast} = 1`$ (`results/thresholds.csv`).
 3. **Toeplitz design (Fig. 3).** The transition lies between the eq. (29) bounds, $`\theta_\ell \approx 0.52`$–$`0.59`$ and $`\theta_u \approx 1.63`$–$`1.87`$, with $`\hat\theta_{50} = 1.09`$–$`1.29`$. The paper's vertical lines match only $`\rho_\ell \approx 0.89`$ and $`\rho_u = 1`$, not the full bounds (`results/theory_bounds.csv`).
 4. **Rescaling formula.** The paper is inconsistent about it: Section VII and the Fig. 1 caption use $`n/[2k\log(p-k)]`$, the Fig. 2 and Fig. 3 captions use $`n/[k\log(p-k)]`$. This study follows Section VII.

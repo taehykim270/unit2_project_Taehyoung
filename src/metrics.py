@@ -2,7 +2,7 @@
 Performance measures computed from the raw per-replicate simulation output.
 
 Reads  results/raw/simulation_raw.csv
-       docs/paper_values.csv          success rates read off the paper's figures
+       data/paper_values.csv          success rates read off the paper's Figs. 1(b), 2 and 3
 Writes results/summary.csv            one row per condition (success rate, MCSE, Wilson CI, diagnostics)
        results/thresholds.csv         one row per curve (empirical theta_10 / theta_50 / theta_90)
        results/collapse.csv           one row per theta: do the curves for different p overlap?
@@ -268,7 +268,7 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     parser = argparse.ArgumentParser(description="Summarize raw simulation results.")
     parser.add_argument("--raw", default="results/raw/simulation_raw.csv")
-    parser.add_argument("--paper", default="docs/paper_values.csv")
+    parser.add_argument("--paper", default="data/paper_values.csv")
     parser.add_argument("--out-dir", default="results")
     args = parser.parse_args()
 

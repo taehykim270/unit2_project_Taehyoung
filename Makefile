@@ -36,7 +36,7 @@ $(RAW): src/simulation.py src/dgps.py src/methods.py
 # Based on the raw results, make summary statistics
 analyze: $(SUMMARY)
 
-$(SUMMARY): $(RAW) src/metrics.py docs/paper_values.csv
+$(SUMMARY): $(RAW) src/metrics.py data/paper_values.csv
 	$(PYTHON) -m src.metrics
 
 # Make the figures from the summary statistics

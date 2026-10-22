@@ -67,11 +67,12 @@ The simulation can also be run directly, for example
 | `results/summary.csv` | one row per condition: success rate, Monte Carlo SE, 95% Wilson CI, diagnostics |
 | `results/thresholds.csv` | per curve: θ where the success rate first reaches 0.1, 0.5 and 0.9 |
 | `results/collapse.csv` | per θ: largest gap between the curves for different p (two-proportion z) |
-| `results/paper_comparison.csv` | our success rates next to approximate values read off the paper's Fig. 1(b) |
+| `results/paper_comparison.csv` | our success rates next to approximate values read off the paper's Figs. 1(b), 2 and 3 |
 | `results/theory_bounds.csv` | eq. (29) thresholds θ_ℓ, θ_u and ρ_ℓ, ρ_u, averaged over random supports |
 | `results/figures/fig1_success_vs_n_and_theta` | Fig. 1: success probability vs. n and vs. θ |
 | `results/figures/fig1_pdw_diagnostics` | diagnostic figure: which step of the primal-dual witness fails, and how badly |
-| `results/figures/fig2_fig3_success_grid` | Figs. 2–3: success probability by design and sparsity regime, with the theoretical thresholds |
+| `results/figures/fig2_identity_by_regime` | Fig. 2: identity design, success probability by sparsity regime |
+| `results/figures/fig3_toeplitz_by_regime` | Fig. 3: Toeplitz design, with the theoretical thresholds |
 
 ## Repository structure
 
@@ -83,10 +84,12 @@ The simulation can also be run directly, for example
 │   ├── simulation.py    # configuration (CONFIG), seeding and the simulation loop
 │   └── figures.py       # all figures
 ├── tests/               # DGP verification, method correctness, output validation, reproducibility
-├── docs/paper_values.csv  # approximate values read off the paper's Fig. 1(b)
 ├── results/             # summary tables and figures (raw results are git-ignored)
-├── data/simulated/      # placeholder for cached replicates (unused: replicates are regenerated from seeds)
+├── data/
+│   ├── paper_values.csv # approximate values read off the paper's Figs. 1(b), 2 and 3
+│   └── simulated/       # placeholder for cached replicates (unused: replicates are regenerated from seeds)
 ├── ADEMP.md             # simulation design document
+├── ANALYSIS.md          # critical analysis
 ├── Makefile
 └── requirements.txt
 ```

@@ -7,7 +7,7 @@ import pytest
 
 from helpers import make_fake_raw
 from src.dgps import generate_replicate, sample_size
-from src.figures import FORMATS, fig1_diagnostics, fig1_success, fig23_success_grid, save_figure, select_check, set_style
+from src.figures import FORMATS, fig1_diagnostics, fig1_success, fig_success_by_regime, save_figure, select_check, set_style
 from src.methods import PDWClosedForm, PDWRestrictedLasso, regularization_lambda
 from src.metrics import summarize_conditions, summarize_theory_bounds
 from src.simulation import CONFIG, run_simulation
@@ -89,7 +89,7 @@ def test_saved_figures_are_byte_identical_across_runs(tmp_path):
 
 
 def test_figures_are_written_in_every_format(tmp_path):
-    """All three figures render from a small simulation and are saved as PDF and PNG."""
+    """All four figures render from a small simulation and are saved as PDF and PNG."""
     config = dict(CONFIG, n_reps=5, p_values=[128, 256], thetas=[0.5, 1.0, 1.5, 2.0])
     summary = select_check(summarize_conditions(run_simulation(config)), CONFIG["check"])
     bounds = summarize_theory_bounds(summary[["design", "regime", "p", "k"]].drop_duplicates(),
@@ -97,7 +97,8 @@ def test_figures_are_written_in_every_format(tmp_path):
     set_style()
     fig1_success(summary, tmp_path / "fig1")
     fig1_diagnostics(summary, tmp_path / "diag")
-    fig23_success_grid(summary, bounds, tmp_path / "grid")
-    for stem in ("fig1", "diag", "grid"):
+    fig_success_by_regime(summary, bounds, "identity", tmp_path / "fig2")
+    fig_success_by_regime(summary, bounds, "toeplitz", tmp_path / "fig3")
+    for stem in ("fig1", "diag", "fig2", "fig3"):
         for ext in FORMATS:
             assert (tmp_path / f"{stem}.{ext}").stat().st_size > 0
